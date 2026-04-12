@@ -1,0 +1,49 @@
+import { createRouter, createWebHistory } from 'vue-router'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      redirect: '/login'
+    },
+    {
+      path: '/manager',
+      component: () => import('../views/Manager.vue'),
+      children: [
+        { path: 'home', meta: { name: '系统首页' }, component: () => import('../views/admin/Home.vue') },
+        { path: 'admin', meta: { name: '管理员信息' }, component: () => import('../views/admin/Admin.vue') },
+        { path: 'notice', meta: { name: '系统公告' }, component: () => import('../views/admin/Notice.vue') },
+        { path: 'category', meta: { name: '反诈分类' }, component: () => import('../views/admin/Category.vue') },
+        { path: 'publicity', meta: { name: '反诈宣传' }, component: () => import('../views/admin/Publicity.vue') },
+        { path: 'activity', meta: { name: '反诈活动' }, component: () => import('../views/admin/Activity.vue') },
+        { path: 'activitySignUp', meta: { name: '报名管理' }, component: () => import('../views/admin/ActivitySignUp.vue') },
+        { path: 'person', meta: { name: '个人资料' }, component: () => import('../views/admin/Person.vue') },
+        { path: 'password', meta: { name: '修改密码' }, component: () => import('../views/admin/Password.vue') },
+        { path: 'user', meta: { name: '用户信息' }, component: () => import('../views/admin/User.vue') },
+      ]
+    },
+    {
+      path: '/front',
+      component: () => import('../views/Front.vue'),
+      children: [
+        { path: 'home', meta: { name: '系统首页' }, component: () => import('../views/user/Home.vue') },
+        { path: 'publicity', meta: { name: '反诈宣传' }, component: () => import('../views/user/Publicity.vue') },
+        { path: 'publicityDetail', meta: { name: '反诈宣传详情' }, component: () => import('../views/user/PublicityDetail.vue') },
+        { path: 'activity', meta: { name: '反诈活动' }, component: () => import('../views/user/Activity.vue') },
+        { path: 'activityDetail', meta: { name: '反诈活动详情' }, component: () => import('../views/user/ActivityDetail.vue') },
+        { path: 'notice', meta: { name: '系统公告' }, component: () => import('../views/user/Notice.vue') },
+        { path: 'person', meta: { name: '个人中心' }, component: () => import('../views/user/Person.vue') },
+        { path: 'password', meta: { name: '修改密码' }, component: () => import('../views/user/Password.vue') },
+        { path: 'activitySignUp', meta: { name: '我的报名' }, component: () => import('../views/user/MyActivitySignUp.vue') },
+
+      ]
+    },
+    { path: '/login', meta: { name: '登录' }, component: () => import('../views/Login.vue') },
+    { path: '/register', meta: { name: '注册' }, component: () => import('../views/Register.vue') },
+    { path: '/404', meta: { name: '404' }, component: () => import('../views/404.vue') },
+    { path: '/:pathMatch(.*)', redirect: '/404' }
+  ]
+})
+
+export default router

@@ -1,0 +1,79 @@
+/* 顶部通知条样式 */
+.front-notice {
+    padding: 5px 20px;
+    color: #666;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+}
+
+/* 页面头部容器样式 */
+.front-header {
+    background-color: #1b2730;
+    display: flex;
+    height: 60px;
+    line-height: 60px;
+    border-bottom: 1px solid #eee;
+}
+
+/* 头部左侧区域 */
+.front-header-left {
+    width: 350px;
+    display: flex;
+    align-items: center;
+    padding-left: 30px;
+}
+
+/* 头部左侧logo图片 */
+.front-header-left img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+}
+
+/* 头部左侧标题文字 */
+.front-header-left .title {
+    color: #ffffff;
+    margin-left: 10px;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+/* 头部中间区域：自动占满剩余空间 */
+.front-header-center {
+    flex: 1;
+}
+
+/* 头部右侧区域 */
+.front-header-right {
+    padding-right: 20px;
+}
+
+/* 主体内容区域 */
+.main-content {
+    width: 80%;
+    margin: 5px auto;
+}
+
+/*Element-Plus样式覆盖*/
+.el-menu-item {
+    border: none !important;
+    background-color: #1b2730 !important;
+    color: white !important;
+}
+
+/* 横向菜单容器背景色 */
+.el-menu--horizontal {
+    background-color: #1b2730;
+}
+
+/* 横向菜单 选中状态的选项样式 */
+.el-menu--horizontal .is-active {
+    color: #d2df81 !important;
+    font-weight: bold;
+}
+
+/* 横向菜单 未选中选项的悬浮样式 */
+.el-menu-item:not(.is-active):hover {
+    color: #d2df81 !important;
+}
