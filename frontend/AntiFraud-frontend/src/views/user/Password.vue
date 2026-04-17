@@ -1,7 +1,7 @@
 NEW_FILE_CODE
 <template>
   <div style="width: 40%; margin: 20px auto" class="card">
-    <div style="font-size: 20px; padding: 20px">修改密码</div>
+    <div style="font-size: 30px; padding: 20px">修改密码</div>
     <el-form ref="formRef" :rules="data.rules" :model="data.user" label-width="80px" style="padding: 20px">
       <el-form-item label="原密码" prop="password">
         <el-input v-model="data.user.password" placeholder="请输入原密码" show-password></el-input>

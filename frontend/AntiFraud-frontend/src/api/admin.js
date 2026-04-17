@@ -1,4 +1,3 @@
-NEW_FILE_CODE
 import request from '@/utils/request'
 
 /**

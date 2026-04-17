@@ -1,27 +1,27 @@
 <template>
   <div style="width: 70%; margin: 20px auto">
-    <div style="font-size: 25px">我的报名</div>
+    <div style="font-size: 30px; padding-left:100px" >我的报名</div>
     <div style="margin-top: 20px; padding: 20px" class="card">
       <el-table stripe :data="data.tableData">
-        <el-table-column prop="activityName" label="活动名称" width="400" show-overflow-tooltip>
+        <el-table-column prop="activityName" label="活动名称" width="400" show-overflow-tooltip align="center">
           <template v-slot="scope">
             <span style="cursor: pointer;" @click="router.push('/front/activityDetail?id=' + scope.row.activityId)">{{ scope.row.activityName }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="signupTime" label="报名时间">
+        <el-table-column prop="signupTime" label="报名时间" align="center">
           <template v-slot="scope">
               {{ scope.row.signupTime }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="审核状态">
+        <el-table-column prop="status" label="审核状态" align="center">
           <template v-slot="scope">
             <el-tag v-if="scope.row.status === '待审核'" type="warning">{{ scope.row.status }}</el-tag>
             <el-tag v-if="scope.row.status === '审核通过'" type="success">{{ scope.row.status }}</el-tag>
             <el-tag v-if="scope.row.status === '审核拒绝'" type="danger">{{ scope.row.status }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="reason" label="审核说明" />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column prop="reason" label="审核说明" align="center" />
+        <el-table-column label="操作" width="100" fixed="right" align="center">
           <template v-slot="scope">
             <el-button type="danger" plain @click="del(scope.row.id)">删除</el-button>
           </template>

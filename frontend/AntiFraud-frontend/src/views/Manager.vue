@@ -6,10 +6,6 @@
         <div class="title">管理系统</div>
       </div>
       <div class="manager-header-center">
-        <el-breadcrumb separator="/">
-          <el-breadcrumb-item :to="{ path: '/manager/home' }">首页</el-breadcrumb-item>
-          <el-breadcrumb-item>{{ router.currentRoute.value.meta.name }}</el-breadcrumb-item>
-        </el-breadcrumb>
       </div>
       <div class="manager-header-right">
         <el-dropdown style="cursor: pointer">
@@ -47,6 +43,8 @@
             <el-menu-item index="/manager/publicity">反诈宣传</el-menu-item>
             <el-menu-item index="/manager/activity">反诈活动</el-menu-item>
             <el-menu-item index="/manager/activitySignUp">报名管理</el-menu-item>
+            <el-menu-item index="/manager/article">帖子管理</el-menu-item>
+            <el-menu-item index="/manager/report">举报管理</el-menu-item>
             <el-menu-item index="/manager/notice">系统公告</el-menu-item>
           </el-sub-menu>
           <el-sub-menu index="2">

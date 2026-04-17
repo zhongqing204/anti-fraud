@@ -7,8 +7,12 @@
     </div>
     <div style="width: 60%; margin: 30px auto">
       <div>
-        <el-row :gutter="20">
-          <el-col :span="6" v-for="item in data.newsData" style="margin-bottom: 20px">
+        <el-button style="margin-bottom: 20px" @click="changCategory(null)" :type="checkType(null)">全部</el-button>
+        <el-button style="margin-bottom: 20px" @click="changCategory(item.id)" :type="checkType(item.id)" v-for="item in data.categoryData" :key="item.id">{{ item.name }}</el-button>
+      </div>
+      <div>
+         <el-row :gutter="20">
+          <el-col :span="6" v-for="item in data.newsData" :key="item.id" style="margin-bottom: 20px">
             <div class="front_card">
               <div>
                 <img :src="getCoverUrl(item.cover)" alt="" style="height: 180px; width: 100%; border-radius: 5px; cursor: pointer" @click="router.push('/front/publicityDetail?id=' + item.id)">
@@ -35,21 +39,46 @@
 </template>
 
 <script setup>
-import {reactive, ref, onBeforeUnmount, shallowRef} from "vue";
+import {reactive} from "vue";
 import request from "@/utils/request.js";
-import {ElMessage, ElMessageBox} from "element-plus";
+import {ElMessage} from "element-plus";
 import router from "@/router/index.js";
+import {Clock} from '@element-plus/icons-vue'
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
   title: null,
+  categoryId: null,
+  categoryData: [],
   pageNum: 1,
   pageSize: 6,
   total: 0,
   newsData: [],
 })
+
+const loadCategory = () => {
+  request.get('/category/selectAll').then(res => {
+    if (res.code === '200') {
+      data.categoryData = res.data
+      console.log('分类数据:', data.categoryData)
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+loadCategory()
+
+const changCategory = (categoryId) => {
+  data.categoryId = categoryId
+  data.pageNum = 1
+  load()
+}
+
+const checkType = (categoryId) => {
+  return data.categoryId === categoryId ? 'primary' : ''
+}
 
 const getCoverUrl = (cover) => {
   if (!cover) return ''
@@ -65,6 +94,7 @@ const load = () => {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
       title: data.title,
+      categoryId: data.categoryId,
     }
   }).then(res => {
     if (res.code === '200') {
@@ -77,9 +107,4 @@ const load = () => {
 }
 
 load()
-
 </script>
-
-<style scoped>
-
-</style>

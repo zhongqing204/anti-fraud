@@ -36,7 +36,7 @@ public class ActivitySignUpServiceImpl extends ServiceImpl<ActivitySignUpMapper,
 
         List<ActivitySignup> list = this.list(queryWrapper);
         if (!CollectionUtils.isEmpty(list)) {
-            throw new CustomException("500", "您已经报名过该活动，请勿重复提交");
+            throw new CustomException("400", "您已经报名过该活动，请勿重复提交");
         } else {
             activitySignup.setSignupTime(LocalDateTime.now());
             User user = userMapper.selectById(activitySignup.getUserId());

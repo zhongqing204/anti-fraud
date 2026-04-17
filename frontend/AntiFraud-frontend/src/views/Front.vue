@@ -10,6 +10,8 @@
           <el-menu-item index="/front/home">首页</el-menu-item>
           <el-menu-item index="/front/publicity">反诈宣传</el-menu-item>
           <el-menu-item index="/front/activity">反诈活动</el-menu-item>
+          <el-menu-item index="/front/article">反诈论坛</el-menu-item>
+          <el-menu-item index="/front/report">反诈举报</el-menu-item>
           <el-menu-item index="/front/notice">系统公告</el-menu-item>
         </el-menu>
       </div>
@@ -28,7 +30,11 @@
               <el-dropdown-menu>
                 <el-dropdown-item @click="router.push('/front/person')">个人中心</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/password')">修改密码</el-dropdown-item>
-                <el-dropdown-item @click="router.push('/front/activitySignUp')">我的报名</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/front/myActivitySignUp')">我的报名</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/front/myArticle')">我的帖子</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/front/myCollect')">我的收藏</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/front/myComment')">我的评论</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/front/myReport')">我的举报</el-dropdown-item>
                 <el-dropdown-item @click="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
             </template>

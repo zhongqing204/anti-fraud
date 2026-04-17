@@ -30,7 +30,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         if (category != null && StringUtils.hasText(category.getName())){
             queryWrapper.like(Category::getName, category.getName());
         }
-        queryWrapper.orderByDesc(Category::getId);
+        queryWrapper.orderByAsc(Category::getId);
         return this.list(queryWrapper);
     }
 
@@ -40,7 +40,7 @@ public class CategoryServiceImpl extends ServiceImpl<CategoryMapper, Category> i
         if (category != null && StringUtils.hasText(category.getName())) {
             queryWrapper.like(Category::getName, category.getName());
         }
-        queryWrapper.orderByDesc(Category::getId);
+        queryWrapper.orderByAsc(Category::getId);
         return this.page(new Page<>(pageNum, pageSize), queryWrapper);
     }
 }

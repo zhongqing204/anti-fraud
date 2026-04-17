@@ -18,9 +18,9 @@
         <el-form-item>
           <el-button size="large" type="primary" style="width: 100%" @click="login" :loading="data.loading">登 录</el-button>
         </el-form-item>
-        <div style="text-align: right">
-          还没有账号？请 <a href="/register">注册</a>
-        </div>
+        <el-form-item>
+          <el-button size="large" type="warning" style="width: 100%" @click="router.push('/register')">注 册</el-button>
+        </el-form-item>
       </el-form>
     </div>
   </div>
@@ -93,20 +93,20 @@ const login = () => {
 
 <style scoped>
 .login-container {
-  height: 930px;
+  height: 100vh;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
   background-image: url('../assets/images/LoginBackground.png');
   background-size: 100% 100%;
-  padding-left: 1000px;
+  padding-left: 60%;
 }
 .login-box {
   width: 400px;
   padding: 30px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgb(173, 173, 173);
 }
 </style>

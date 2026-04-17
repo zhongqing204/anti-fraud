@@ -1,4 +1,3 @@
-NEW_FILE_CODE
 import request from '@/utils/request'
 
 // 公告管理相关接口

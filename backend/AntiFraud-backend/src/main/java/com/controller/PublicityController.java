@@ -76,11 +76,15 @@ public class PublicityController {
      */
     @GetMapping("/selectPage")
     public Result selectPage(@RequestParam(required = false) String title,
+                             @RequestParam(required = false) Integer categoryId,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize){
         Publicity publicity = new Publicity();
         if (StringUtils.hasText(title)) {
             publicity.setTitle(title);
+        }
+        if (categoryId != null){
+            publicity.setCategoryId(categoryId);
         }
         Page<Publicity> page = publicityService.selectPage(publicity, pageNum, pageSize);
         return Result.success(page);

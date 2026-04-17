@@ -1,16 +1,16 @@
 <template>
   <div>
-    <div class="card" style="margin-bottom: 5px">
+    <div class="card" style="margin-bottom: 10px">
       <el-input v-model="data.account" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入账号查询"></el-input>
       <el-button type="info" plain @click="load">查询</el-button>
       <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
     </div>
-    <div class="card" style="margin-bottom: 5px">
+    <div class="card" style="margin-bottom: 10px">
       <el-button type="primary" plain @click="handleAdd">新增</el-button>
       <el-button type="danger" plain @click="delBatch">批量删除</el-button>
     </div>
 
-    <div class="card" style="margin-bottom: 5px">
+    <div class="card" style="margin-bottom: 10px">
       <el-table stripe :data="data.tableData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="account" label="账号" align="center" />

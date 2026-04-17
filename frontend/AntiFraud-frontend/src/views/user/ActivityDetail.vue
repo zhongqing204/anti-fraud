@@ -61,8 +61,11 @@ const submit = () => {
     if (res.code === '200') {
       ElMessage.success('报名成功，等待管理员审核')
     } else {
-      ElMessage.error(res.msg)
+      ElMessage.error(res.msg || '你已经报名，请等待审核')
     }
+  }).catch(err => {
+    console.error('报名失败:', err)
+    ElMessage.error(err.response?.data?.msg || '报名失败，请稍后重试')
   })
 }
 

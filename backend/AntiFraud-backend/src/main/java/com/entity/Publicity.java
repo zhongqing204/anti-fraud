@@ -15,6 +15,8 @@ public class Publicity {
     private Integer id;
     private String title;
     private String content;
+    private Integer categoryId;
+    private String categoryName;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -43,6 +45,22 @@ public class Publicity {
 
     public void setContent(String content) {
         this.content = content;
+    }
+
+    public Integer getCategoryId() {
+        return categoryId;
+    }
+
+    public void setCategoryId(Integer categoryId) {
+        this.categoryId = categoryId;
+    }
+
+    public String getCategoryName() {
+        return categoryName;
+    }
+
+    public void setCategoryName(String categoryName) {
+        this.categoryName = categoryName;
     }
 
     public LocalDateTime getCreateTime() {

@@ -12,12 +12,13 @@
         <el-form-item prop="confirmPassword">
           <el-input show-password :prefix-icon="Lock" size="large" v-model="data.form.confirmPassword" placeholder="请确认密码"></el-input>
         </el-form-item>
+        
         <el-form-item>
-          <el-button size="large" type="primary" style="width: 100%" @click="register" :loading="data.loading">注 册</el-button>
+          <el-button size="large" type="warning" style="width: 100%" @click="register" :loading="data.loading">注 册</el-button>
         </el-form-item>
-        <div style="text-align: right">
-          已有账号？请 <a href="/login">登录</a>
-        </div>
+        <el-form-item>
+          <el-button size="large" type="primary" style="width: 100%" @click="router.push('/login')">登 录</el-button>
+        </el-form-item>
       </el-form>
     </div>
   </div>
@@ -111,13 +112,15 @@ const register = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: linear-gradient(to top, #00467f, #a5cc82);
+  background-image: url('../assets/images/LoginBackground.png');
+  padding-left: 60%;
+  background-size: 100% 100%;
 }
 .login-box {
-  width: 350px;
+  width: 400px;
   padding: 30px;
   border-radius: 5px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  background-color: rgba(255, 255, 255, 0.5);
+  background-color: rgb(173, 173, 173);
 }
 </style>

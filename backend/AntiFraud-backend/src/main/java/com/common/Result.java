@@ -5,8 +5,8 @@ import lombok.Data;
 
 @Data
 public class Result<T> {
-    private String message;
     private String code;
+    private String message;
     private T data;
 
     public static <T> Result<T> success() {
