@@ -39,17 +39,42 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
 
     @Override
     public List<Comment> selectAll(Comment comment) {
-        LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
-        if (comment != null) {
-            if (comment.getUserId() != null) {
-                queryWrapper.eq(Comment::getUserId, comment.getUserId());
+            LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
+            if (comment != null) {
+                if (comment.getUserId() != null) {
+                    queryWrapper.eq(Comment::getUserId, comment.getUserId());
+                }
+                if (comment.getArticleId() != null) {
+                    queryWrapper.eq(Comment::getArticleId, comment.getArticleId());
+                }
             }
-            if (comment.getArticleId() != null) {
-                queryWrapper.eq(Comment::getArticleId, comment.getArticleId());
+            queryWrapper.orderByDesc(Comment::getId);
+            List<Comment> list = this.list(queryWrapper);
+
+            if (list != null && !list.isEmpty()) {
+                List<Integer> userIds = list.stream()
+                        .map(Comment::getUserId)
+                        .filter(id -> id != null)
+                        .distinct()
+                        .collect(Collectors.toList());
+
+                if (!userIds.isEmpty()) {
+                    List<User> users = userMapper.selectBatchIds(userIds);
+                    Map<Integer, String> userNameMap = users.stream()
+                            .collect(Collectors.toMap(User::getId, User::getName));
+                    Map<Integer, String> userAvatarMap = users.stream()
+                            .collect(Collectors.toMap(User::getId, User::getAvatar));
+
+                    list.forEach(c -> {
+                        if (c.getUserId() != null) {
+                            c.setUserName(userNameMap.get(c.getUserId()));
+                            c.setUserAvatar(userAvatarMap.get(c.getUserId()));
+                        }
+                    });
+                }
             }
-        }
-        queryWrapper.orderByDesc(Comment::getId);
-        return this.list(queryWrapper);
+
+            return list;
     }
 
     @Override

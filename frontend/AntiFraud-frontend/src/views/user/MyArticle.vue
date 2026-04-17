@@ -9,15 +9,8 @@
       </div>
       <el-table stripe :data="data.tableData">
         <el-table-column prop="title" label="帖子名称" width="200" show-overflow-tooltip />
-        <el-table-column prop="cover" label="帖子主图">
-          <template v-slot="scope">
-            <el-image style="width: 40px; height: 40px; border-radius: 5px; display: block" v-if="scope.row.cover"
-                      :src="scope.row.cover" :preview-src-list="[scope.row.cover]" preview-teleported></el-image>
-          </template>
-        </el-table-column>
         <el-table-column prop="categoryName" label="反诈分类" />
         <el-table-column prop="userName" label="用户名称" />
-        <el-table-column prop="content" label="查看内容" />
         <el-table-column prop="time" label="发布时间" />
         <el-table-column prop="status" label="审核状态">
           <template v-slot="scope">
@@ -40,22 +33,10 @@
       </div>
     </div>
 
-    <el-dialog title="帖子信息" v-model="data.formVisible" width="50%" destroy-on-close>
+    <el-dialog title="发布帖子" v-model="data.formVisible" width="60%" destroy-on-close>
       <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="80px" style="padding: 20px">
-        <el-form-item prop="title" label="帖子标题">
-          <el-input v-model="data.form.title" placeholder="请输入帖子标题"></el-input>
-        </el-form-item>
-        <el-form-item prop="cover" label="帖子主图">
-          <el-upload
-              :action="baseUrl + '/files/upload'"
-              :on-success="handleCoverUpload"
-              list-type="picture"
-          >
-            <el-button type="primary">点击上传</el-button>
-          </el-upload>
-        </el-form-item>
-        <el-form-item prop="categoryId" label="反诈分类">
-          <el-select v-model="data.form.categoryId" placeholder="请选择反诈分类">
+        <el-form-item prop="categoryId" label="分类">
+          <el-select v-model="data.form.categoryId" placeholder="请选择分类" style="width: 100%">
             <el-option
                 v-for="item in data.categoryData"
                 :key="item.id"
@@ -64,14 +45,31 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item prop="content" label="帖子内容">
-          <el-input type="textarea" :rows="5" v-model="data.form.content" placeholder="请输入帖子内容"></el-input>
+        <el-form-item prop="title" label="标题">
+          <el-input v-model="data.form.title" placeholder="请输入完整帖子标题(5-31个字)" maxlength="31" show-word-limit></el-input>
+        </el-form-item>
+        <el-form-item prop="content" label="内容">
+          <div style="border: 1px solid #ccc; width: 100%; height: 400px;">
+            <Toolbar
+              style="border-bottom: 1px solid #ccc"
+              :editor="editorRef"
+              :defaultConfig="toolbarConfig"
+              mode="default"
+            />
+            <Editor
+              style="height: 350px; overflow-y: hidden;"
+              v-model="data.form.content"
+              :defaultConfig="editorConfig"
+              mode="default"
+              @onCreated="handleCreated"
+            />
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="data.formVisible = false">取 消</el-button>
-          <el-button type="primary" @click="save">确 定</el-button>
+          <el-button type="primary" @click="save">发布</el-button>
         </span>
       </template>
     </el-dialog>
@@ -79,14 +77,49 @@
 </template>
 
 <script setup>
-import {reactive, ref} from "vue";
+import {reactive, ref, onBeforeUnmount, shallowRef, markRaw} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import router from "@/router/index.js";
 import {Delete, Edit} from "@element-plus/icons-vue";
+import '@wangeditor/editor/dist/css/style.css'
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
 const formRef = ref()
 const baseUrl = import.meta.env.VITE_BASE_URL
+const editorRef = shallowRef()
+
+const toolbarConfig = {}
+
+const editorConfig = { 
+  placeholder: '请输入正文（建议200-2000字）',
+  MENU_CONF: {
+    uploadImage: {
+      server: baseUrl + '/files/upload',
+      fieldName: 'file',
+      maxFileSize: 10 * 1024 * 1024,
+      allowedFileTypes: ['image/*'],
+      customInsert(res, insertFn) {
+        if (res.code === '200') {
+          const url = res.data.startsWith('http') ? res.data : baseUrl + res.data
+          insertFn(url, '', url)
+        } else {
+          ElMessage.error(res.msg || '上传失败')
+        }
+      }
+    }
+  }
+}
+
+onBeforeUnmount(() => {
+  const editor = editorRef.value
+  if (editor == null) return
+  editor.destroy()
+})
+
+const handleCreated = (editor) => {
+  editorRef.value = markRaw(editor)
+}
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
@@ -99,14 +132,11 @@ const data = reactive({
   total: 0,
   categoryData: [],
   rules: {
+    categoryId: [
+      { required: true, message: '请选择分类', trigger: 'change' },
+    ],
     title: [
       { required: true, message: '请输入帖子标题', trigger: 'blur' },
-    ],
-    cover: [
-      { required: true, message: '请上传帖子封面', trigger: 'blur' },
-    ],
-    categoryId: [
-      { required: true, message: '请选择帖子分类', trigger: 'blur' },
     ],
     content: [
       { required: true, message: '请输入帖子内容', trigger: 'blur' },
@@ -148,6 +178,7 @@ const handleAdd = () => {
   data.form = {}
   data.form.userId = data.user.id
   data.form.status = '待审核'
+  data.form.content = ''
   data.formVisible = true
 }
 
@@ -159,8 +190,9 @@ const handleEdit = (row) => {
 const add = () => {
   request.post('/article/add', data.form).then(res => {
     if (res.code === '200') {
-      ElMessage.success('操作成功')
+      ElMessage.success('发布成功')
       data.formVisible = false
+      data.form.content = ''
       load()
     } else {
       ElMessage.error(res.msg)
@@ -173,6 +205,7 @@ const update = () => {
     if (res.code === '200') {
       ElMessage.success('操作成功')
       data.formVisible = false
+      data.form.content = ''
       load()
     }
   })
@@ -181,6 +214,10 @@ const update = () => {
 const save = () => {
   formRef.value.validate(valid => {
     if (valid) {
+      if (!data.form.content || data.form.content === '<p><br></p>') {
+        ElMessage.error('请填写帖子内容')
+        return
+      }
       data.form.id ? update() : add()
     }
   })
@@ -204,11 +241,6 @@ const del = (id) => {
 const reset = () => {
   data.title = null
   load()
-}
-
-
-const handleCoverUpload = (res) => {
-  data.form.cover = res.data
 }
 
 </script>

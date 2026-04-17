@@ -44,6 +44,9 @@
             <el-menu-item index="/manager/activity">反诈活动</el-menu-item>
             <el-menu-item index="/manager/activitySignUp">报名管理</el-menu-item>
             <el-menu-item index="/manager/article">帖子管理</el-menu-item>
+            <el-menu-item index="/manager/likes">点赞信息</el-menu-item>
+            <el-menu-item index="/manager/collect">收藏信息</el-menu-item>
+            <el-menu-item index="/manager/comment">评论信息</el-menu-item>
             <el-menu-item index="/manager/report">举报管理</el-menu-item>
             <el-menu-item index="/manager/notice">系统公告</el-menu-item>
           </el-sub-menu>

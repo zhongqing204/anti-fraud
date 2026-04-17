@@ -32,6 +32,7 @@
                 <el-dropdown-item @click="router.push('/front/password')">修改密码</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/myActivitySignUp')">我的报名</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/myArticle')">我的帖子</el-dropdown-item>
+                <el-dropdown-item @click="router.push('/front/myLikes')">我的点赞</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/myCollect')">我的收藏</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/myComment')">我的评论</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/myReport')">我的举报</el-dropdown-item>

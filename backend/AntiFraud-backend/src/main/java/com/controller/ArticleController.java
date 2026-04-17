@@ -42,7 +42,7 @@ public class ArticleController {
 
     @GetMapping("/selectById/{id}")
     public Result selectById(@PathVariable Integer id) {
-        Article article = articleService.getById(id);
+        Article article = articleService.selectById(id);
         return Result.success(article);
     }
 
@@ -56,9 +56,10 @@ public class ArticleController {
     public Result selectPage(@RequestParam(required = false) String userName,
                              @RequestParam(required = false) String title,
                              @RequestParam(required = false) Integer userId,
+                             @RequestParam(required = false) String status,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize) {
-        Page<Article> page = articleService.selectPage(userName, title, userId, pageNum, pageSize);
+        Page<Article> page = articleService.selectPage(userName, title, userId, status, pageNum, pageSize);
         return Result.success(page);
     }
 }

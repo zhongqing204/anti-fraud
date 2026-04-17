@@ -18,13 +18,20 @@ public class Article {
     private String content;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime time;
-    private String cover;
-    private Integer categoryId;
     private Integer userId;
     private String status;
-    @TableField(exist = false)
-    private String categoryName;
     private String userName;
+    private String userAvatar;
 
+    @TableField(exist = false)
+    private Integer likeCount;
+    @TableField(exist = false)
+    private Integer commentCount;
+    @TableField(exist = false)
+    private Integer collectCount;
+    @TableField(exist = false)
+    private Boolean liked;
+    @TableField(exist = false)
+    private Boolean collected;
 
 }
