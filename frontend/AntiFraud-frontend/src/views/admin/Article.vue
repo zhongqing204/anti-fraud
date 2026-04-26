@@ -68,7 +68,6 @@
 import {reactive, ref, onBeforeUnmount, shallowRef, markRaw} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
-import {Delete, Edit} from "@element-plus/icons-vue";
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
@@ -81,7 +80,7 @@ const editorConfig = {
   placeholder: '请输入帖子内容...',
   MENU_CONF: {
     uploadImage: {
-      server: baseUrl + '/files/upload',
+      server: baseUrl + '/file/upload',
       fieldName: 'file',
       maxFileSize: 10 * 1024 * 1024,
       allowedFileTypes: ['image/*'],

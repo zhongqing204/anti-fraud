@@ -29,7 +29,7 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue'])
 
 const uploadUrl = computed(() => {
-  return baseUrl + '/files/upload'
+  return baseUrl + '/file/upload'
 })
 
 const headers = computed(() => {

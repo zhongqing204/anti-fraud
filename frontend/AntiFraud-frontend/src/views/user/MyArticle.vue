@@ -9,7 +9,6 @@
       </div>
       <el-table stripe :data="data.tableData">
         <el-table-column prop="title" label="帖子名称" width="200" show-overflow-tooltip />
-        <el-table-column prop="categoryName" label="反诈分类" />
         <el-table-column prop="userName" label="用户名称" />
         <el-table-column prop="time" label="发布时间" />
         <el-table-column prop="status" label="审核状态">
@@ -35,16 +34,6 @@
 
     <el-dialog title="发布帖子" v-model="data.formVisible" width="60%" destroy-on-close>
       <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="80px" style="padding: 20px">
-        <el-form-item prop="categoryId" label="分类">
-          <el-select v-model="data.form.categoryId" placeholder="请选择分类" style="width: 100%">
-            <el-option
-                v-for="item in data.categoryData"
-                :key="item.id"
-                :label="item.name"
-                :value="item.id"
-            />
-          </el-select>
-        </el-form-item>
         <el-form-item prop="title" label="标题">
           <el-input v-model="data.form.title" placeholder="请输入完整帖子标题(5-31个字)" maxlength="31" show-word-limit></el-input>
         </el-form-item>
@@ -95,7 +84,7 @@ const editorConfig = {
   placeholder: '请输入正文（建议200-2000字）',
   MENU_CONF: {
     uploadImage: {
-      server: baseUrl + '/files/upload',
+      server: baseUrl + '/file/upload',
       fieldName: 'file',
       maxFileSize: 10 * 1024 * 1024,
       allowedFileTypes: ['image/*'],
@@ -130,11 +119,7 @@ const data = reactive({
   formVisible: false,
   tableData: [],
   total: 0,
-  categoryData: [],
   rules: {
-    categoryId: [
-      { required: true, message: '请选择分类', trigger: 'change' },
-    ],
     title: [
       { required: true, message: '请输入帖子标题', trigger: 'blur' },
     ],
@@ -162,17 +147,6 @@ const load = () => {
   })
 }
 load()
-
-const loadCategory = () => {
-  request.get('/category/selectAll').then(res => {
-    if (res.code === '200') {
-      data.categoryData = res.data
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
-loadCategory()
 
 const handleAdd = () => {
   data.form = {}

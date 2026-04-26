@@ -53,18 +53,18 @@ const formRef = ref()
 
 const login = () => {
   formRef.value.validate(valid => {
-    if (valid) { // 表示表单校验通过
+    if (valid) { 
       data.loading = true;
       request.post('/auth/login', data.form).then(res => {
         if (res.code === '200') {
           ElMessage.success('登录成功')
-          // 存储用户信息到浏览器的缓存
           const userData = {
             ...res.data.userInfo,
             token: res.data.token,
             password: data.form.password
           };
-          localStorage.setItem('xm-user', JSON.stringify(userData))
+          const storageKey = data.form.role === 'ADMIN' ? 'xm-admin' : 'xm-user';
+          localStorage.setItem(storageKey, JSON.stringify(userData))
           setTimeout(() => {
             const role = userData.role?.trim()?.toUpperCase();
             if(role === 'ADMIN'){

@@ -10,8 +10,21 @@ const request = axios.create({
 // request 拦截器
 // 可以自请求发送前对请求做一些处理
 request.interceptors.request.use(config => {
-    config.headers['Content-Type'] = 'application/json;charset=utf-8';
-    let userStr = localStorage.getItem("xm-user");
+    // 如果不是FormData类型，才设置JSON Content-Type
+    if (!(config.data instanceof FormData)) {
+        config.headers['Content-Type'] = 'application/json;charset=utf-8';
+    }
+    // 根据当前路径判断使用哪个存储key，避免管理员端和用户端数据冲突
+    let userStr = null;
+    const currentPath = window.location.pathname;
+    if (currentPath.startsWith('/manager')) {
+        // 管理员端使用 xm-admin
+        userStr = localStorage.getItem("xm-admin");
+    } else {
+        // 用户端使用 xm-user
+        userStr = localStorage.getItem("xm-user");
+    }
+    
     let user = {};
     try {
         user = JSON.parse(userStr);
@@ -39,7 +52,13 @@ request.interceptors.response.use(
         // 当权限验证不通过的时候给出提示
         if (res.code === '401') {
             ElMessage.warning(res.msg || '登录已过期，请重新登录');
-            localStorage.removeItem('xm-user');
+            // 根据当前路径清除对应的存储
+            const currentPath = window.location.pathname;
+            if (currentPath.startsWith('/manager')) {
+                localStorage.removeItem('xm-admin');
+            } else {
+                localStorage.removeItem('xm-user');
+            }
             setTimeout(() => {
                 router.push('/login');
             }, 1500);
@@ -67,7 +86,13 @@ request.interceptors.response.use(
                     break;
                 case 401:
                     errorMsg = '未授权，请重新登录';
-                    localStorage.removeItem('xm-user');
+                    // 根据当前路径清除对应的存储
+                    const currentPath = window.location.pathname;
+                    if (currentPath.startsWith('/manager')) {
+                        localStorage.removeItem('xm-admin');
+                    } else {
+                        localStorage.removeItem('xm-user');
+                    }
                     setTimeout(() => {
                         router.push('/login');
                     }, 1500);

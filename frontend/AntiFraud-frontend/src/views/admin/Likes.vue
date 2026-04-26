@@ -2,6 +2,7 @@
   <div>
     <div class="card" style="margin-bottom: 5px">
       <el-input v-model="data.userName" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入用户姓名查询"></el-input>
+      <el-input v-model="data.articleTitle" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入帖子标题查询"></el-input>
       <el-button type="info" plain @click="load">查询</el-button>
       <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
     </div>
@@ -15,6 +16,7 @@
         <el-table-column type="selection" width="55" />
         <el-table-column prop="userName" label="用户姓名" />
         <el-table-column prop="articleTitle" label="帖子名称" />
+        <el-table-column prop="time" label="点赞时间" width="180" />
         <el-table-column label="操作" width="100" fixed="right">
           <template v-slot="scope">
             <el-button type="danger" circle :icon="Delete" @click="del(scope.row.id)"></el-button>
@@ -47,7 +49,7 @@ const data = reactive({
 
 // 加载点赞列表
 const load = () => {
-  request.get('/like/selectPage', {
+  request.get('/likes/selectPage', {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
@@ -65,7 +67,7 @@ const load = () => {
 // 删除单个点赞
 const del = (id) => {
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete('/like/delete/' + id).then(res => {
+    request.delete('/likes/delete/' + id).then(res => {
       if (res.code === '200') {
         ElMessage.success("删除成功")
         load()
@@ -85,7 +87,7 @@ const delBatch = () => {
     return
   }
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete("/like/delete/batch", {data: data.ids}).then(res => {
+    request.delete("/likes/delete/batch", {data: data.ids}).then(res => {
       if (res.code === '200') {
         ElMessage.success('操作成功')
         load()
@@ -112,7 +114,3 @@ const reset = () => {
 
 load()
 </script>
-
-<style scoped>
-
-</style>

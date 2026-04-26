@@ -43,6 +43,7 @@ const router = createRouter({
         { path: 'notice', meta: { name: '系统公告' }, component: () => import('../views/user/Notice.vue') },
         { path: 'person', meta: { name: '个人中心' }, component: () => import('../views/user/Person.vue') },
         { path: 'password', meta: { name: '修改密码' }, component: () => import('../views/user/Password.vue') },
+        { path: 'myActivitySignUp', meta: { name: '我的报名' }, component: () => import('../views/user/MyActivitySignUp.vue') },
         { path: 'myArticle', meta: { name: '我的帖子' }, component: () => import('../views/user/MyArticle.vue') },
         { path: 'myLikes', meta: { name: '我的点赞' }, component: () => import('../views/user/MyLikes.vue') },
         { path: 'myCollect', meta: { name: '我的收藏' }, component: () => import('../views/user/MyCollect.vue') },

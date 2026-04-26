@@ -11,19 +11,17 @@
       <el-table stripe :data="data.tableData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
         <el-table-column prop="content" label="举报内容" width="400" />
-        <el-table-column prop="files" label="附件" width="200">
+        <el-table-column prop="files" label="举报图片" width="200">
           <template v-slot="scope">
             <div v-if="scope.row.files">
-              <div v-for="(file, index) in parseFiles(scope.row.files)" :key="index" style="margin-bottom: 5px">
-                <el-button 
-                  link 
-                  type="primary" 
-                  @click="downloadFile(file)"
-                >
-                  <el-icon><Link /></el-icon>
-                  下载文件
-                </el-button>
-              </div>
+              <el-button 
+                link 
+                type="primary" 
+                @click="previewImages(scope.row.files)"
+              >
+                <el-icon><Link /></el-icon>
+                查看图片
+              </el-button>
             </div>
             <span v-else style="color: #999">无附件</span>
           </template>
@@ -69,6 +67,23 @@
       </template>
     </el-dialog>
 
+    <el-dialog v-model="data.previewVisible" width="80%" destroy-on-close class="image-preview-dialog">
+      <div class="image-preview-container">
+        <div class="preview-nav prev" @click="prevImage">
+          <el-icon :size="40"><ArrowLeft /></el-icon>
+        </div>
+        <div class="preview-image">
+          <img :src="data.previewImages[data.currentImageIndex]" alt="预览图片" />
+        </div>
+        <div class="preview-nav next" @click="nextImage">
+          <el-icon :size="40"><ArrowRight /></el-icon>
+        </div>
+      </div>
+      <div class="preview-indicator">
+        {{ data.currentImageIndex + 1 }} / {{ data.previewImages.length }}
+      </div>
+    </el-dialog>
+
   </div>
 </template>
 
@@ -77,7 +92,7 @@
 import {reactive, ref} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
-import {Delete, Edit, Link} from "@element-plus/icons-vue";
+import {Delete, Edit, Link, ArrowLeft, ArrowRight} from "@element-plus/icons-vue";
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 
@@ -91,6 +106,9 @@ const data = reactive({
   total: 0,
   content: null,
   ids: [],
+  previewVisible: false,
+  previewImages: [],
+  currentImageIndex: 0,
   rules: {
     status: [
       { required: true, message: '请选择处理状态', trigger: 'blur' }
@@ -172,20 +190,95 @@ const parseFiles = (filesStr) => {
   try {
     return JSON.parse(filesStr)
   } catch (e) {
-    return [filesStr]
+    return filesStr.split(',').filter(url => url.trim())
   }
 }
 
-const downloadFile = (filePath) => {
-  const url = baseUrl + filePath
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filePath.split('/').pop()
-  link.target = '_blank'
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+const previewImages = (filesStr) => {
+  const images = parseFiles(filesStr)
+  if (images.length === 0) {
+    ElMessage.warning('暂无图片')
+    return
+  }
+  data.previewImages = images.map(url => baseUrl + url)
+  data.currentImageIndex = 0
+  data.previewVisible = true
+}
+
+const prevImage = () => {
+  if (data.currentImageIndex > 0) {
+    data.currentImageIndex--
+  } else {
+    data.currentImageIndex = data.previewImages.length - 1
+  }
+}
+
+const nextImage = () => {
+  if (data.currentImageIndex < data.previewImages.length - 1) {
+    data.currentImageIndex++
+  } else {
+    data.currentImageIndex = 0
+  }
 }
 
 load()
 </script>
+
+<style scoped>
+.image-preview-dialog :deep(.el-dialog__body) {
+  padding: 0;
+  background-color: #000;
+}
+
+.image-preview-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 70vh;
+  position: relative;
+}
+
+.preview-image {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.preview-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.preview-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #fff;
+  cursor: pointer;
+  padding: 20px;
+  transition: all 0.3s;
+  z-index: 10;
+}
+
+.preview-nav:hover {
+  color: #409eff;
+}
+
+.preview-nav.prev {
+  left: 0;
+}
+
+.preview-nav.next {
+  right: 0;
+}
+
+.preview-indicator {
+  text-align: center;
+  color: #000;
+  padding: 15px;
+  font-size: 14px;
+}
+</style>

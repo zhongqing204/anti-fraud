@@ -50,7 +50,7 @@
         
         <el-form-item prop="cover" label="宣传封面">
           <el-upload
-              :action="baseUrl + '/files/upload'"
+              :action="baseUrl + '/file/upload'"
               :on-success="handleCoverUpload"
               list-type="picture"
           >
@@ -118,7 +118,7 @@ const editorConfig = {
   placeholder: '请输入宣传内容...',
   MENU_CONF: {
     uploadImage: {
-      server: baseUrl + '/files/upload',
+      server: baseUrl + '/file/upload',
       fieldName: 'file',
       maxFileSize: 100 * 1024 * 1024,
       allowedFileTypes: ['image/*'],
@@ -132,7 +132,7 @@ const editorConfig = {
       }
     },
     uploadVideo: {
-      server: baseUrl + '/files/upload',
+      server: baseUrl + '/file/upload',
       fieldName: 'file',
       maxFileSize: 100 * 1024 * 1024,
       allowedFileTypes: ['video/*'],

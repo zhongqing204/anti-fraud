@@ -1,6 +1,10 @@
 # 服务器配置
 server:
   port: 8080
+  tomcat:
+    max-http-form-post-size: 2GB
+    connection-timeout: 300000
+    max-swallow-size: 2GB
 
 spring:
   # 数据库配置
@@ -10,15 +14,15 @@ spring:
     username: root  # 你的MySQL用户名
     password: 123456  # 你的MySQL密码
 
-jackson:
-  date-format: yyyy-MM-dd HH:mm:ss
-  time-zone: GMT+8
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
 
   # 文件上传配置
   servlet:
     multipart:
-      max-file-size: 800MB
-      max-request-size: 800MB
+      max-file-size: 2GB
+      max-request-size: 2GB
 
 # MyBatis-Plus配置
 mybatis-plus:

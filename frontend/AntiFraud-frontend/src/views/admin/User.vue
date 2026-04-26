@@ -48,7 +48,7 @@
         </el-form-item>
         <el-form-item prop="avatar" label="头像">
           <el-upload
-              :action="baseUrl + '/files/upload'"
+              :action="baseUrl + '/file/upload'"
               :on-success="handleFileUpload"
               list-type="picture"
               >

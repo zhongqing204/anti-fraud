@@ -13,9 +13,8 @@ import com.service.LikesService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 public class LikesServiceImpl extends ServiceImpl<LikesMapper, Likes> implements LikesService {
@@ -28,6 +27,26 @@ public class LikesServiceImpl extends ServiceImpl<LikesMapper, Likes> implements
 
     @Override
     public void add(Likes likes) {
+        // 自动填充用户名
+        if (likes.getUserId() != null) {
+            User user = userMapper.selectById(likes.getUserId());
+            if (user != null) {
+                likes.setUserName(user.getName());
+            }
+        }
+
+        // 自动填充帖子标题
+        if (likes.getArticleId() != null) {
+            Article article = articleMapper.selectById(likes.getArticleId());
+            if (article != null) {
+                likes.setArticleTitle(article.getTitle());
+            }
+        }
+
+        // 设置点赞时间
+        likes.setTime(LocalDateTime.now());
+
+        // 判断是否已点赞
         LambdaQueryWrapper<Likes> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Likes::getUserId, likes.getUserId())
                 .eq(Likes::getArticleId, likes.getArticleId());
@@ -48,18 +67,14 @@ public class LikesServiceImpl extends ServiceImpl<LikesMapper, Likes> implements
     @Override
     public List<Likes> selectAll(Likes likes) {
         LambdaQueryWrapper<Likes> queryWrapper = buildQueryWrapper(likes);
-        List<Likes> list = this.list(queryWrapper);
-        setUserInfo(list);
-        return list;
+        return this.list(queryWrapper);
     }
 
     @Override
     public Page<Likes> selectPage(Likes likes, Integer pageNum, Integer pageSize) {
         Page<Likes> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Likes> queryWrapper = buildQueryWrapper(likes);
-        Page<Likes> result = this.page(page, queryWrapper);
-        setUserInfo(result.getRecords());
-        return result;
+        return this.page(page, queryWrapper);
     }
 
     private LambdaQueryWrapper<Likes> buildQueryWrapper(Likes likes) {
@@ -71,59 +86,14 @@ public class LikesServiceImpl extends ServiceImpl<LikesMapper, Likes> implements
             if (likes.getArticleId() != null) {
                 queryWrapper.eq(Likes::getArticleId, likes.getArticleId());
             }
+            if (likes.getUserName() != null && !likes.getUserName().isEmpty()) {
+                queryWrapper.like(Likes::getUserName, likes.getUserName());
+            }
+            if (likes.getArticleTitle() != null && !likes.getArticleTitle().isEmpty()) {
+                queryWrapper.like(Likes::getArticleTitle, likes.getArticleTitle());
+            }
         }
+        queryWrapper.orderByDesc(Likes::getTime);
         return queryWrapper;
-    }
-
-    private void setUserInfo(List<Likes> list) {
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-
-        List<Integer> userIds = list.stream()
-                .map(Likes::getUserId)
-                .filter(id -> id != null)
-                .distinct()
-                .collect(Collectors.toList());
-
-        List<Integer> articleIds = list.stream()
-                .map(Likes::getArticleId)
-                .filter(id -> id != null)
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (userIds.isEmpty() && articleIds.isEmpty()) {
-            return;
-        }
-
-        if (!userIds.isEmpty()) {
-            List<User> users = userMapper.selectBatchIds(userIds);
-            Map<Integer, User> userMap = users.stream()
-                    .collect(Collectors.toMap(User::getId, u -> u, (u1, u2) -> u1));
-
-            list.forEach(like -> {
-                if (like.getUserId() != null) {
-                    User user = userMap.get(like.getUserId());
-                    if (user != null) {
-                        like.setUserName(user.getName());
-                    }
-                }
-            });
-        }
-
-        if (!articleIds.isEmpty()) {
-            List<Article> articles = articleMapper.selectBatchIds(articleIds);
-            Map<Integer, Article> articleMap = articles.stream()
-                    .collect(Collectors.toMap(Article::getId, a -> a, (a1, a2) -> a1));
-
-            list.forEach(like -> {
-                if (like.getArticleId() != null) {
-                    Article article = articleMap.get(like.getArticleId());
-                    if (article != null) {
-                        like.setArticleTitle(article.getTitle());
-                    }
-                }
-            });
-        }
     }
 }

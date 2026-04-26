@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/files")
+@RequestMapping("/file")
 public class FileController {
 
     private static final Logger log = LoggerFactory.getLogger(FileController.class);
@@ -34,7 +34,7 @@ public class FileController {
     public Result upload(MultipartFile file) {
         String fileName = file.getOriginalFilename();
         try {
-            log.info("开始上传文件: {}, 大小: {} bytes", fileName, file.getSize());
+            log.info("开始上传文件: {}, 大小: {} bytes, MIME类型: {}", fileName, file.getSize(), file.getContentType());
             if (!FileUtil.isDirectory(filePath)) {
                 FileUtil.mkdir(filePath);
             }
@@ -62,6 +62,7 @@ public class FileController {
             }
             for (MultipartFile file : files) {
                 String fileName = file.getOriginalFilename();
+                log.info("开始上传文件: {}, MIME类型: {}", fileName, file.getContentType());
                 fileName = System.currentTimeMillis() + "-" + fileName;
                 String realFilePath = filePath + fileName;
                 file.transferTo(new java.io.File(realFilePath));
@@ -72,84 +73,5 @@ public class FileController {
             return Result.error("文件上传失败：" + e.getMessage());
         }
         return Result.success(urls);
-    }
-
-    /**
-     * 获取文件
-     */
-    @GetMapping("/{fileName}")
-    public void get(@PathVariable String fileName, HttpServletResponse response) {
-        OutputStream os;
-        try {
-            if (StrUtil.isNotEmpty(fileName)) {
-                byte[] bytes = FileUtil.readBytes(filePath + fileName);
-
-                // 根据文件类型设置 Content-Type
-                String contentType = getContentType(fileName);
-                response.setContentType(contentType);
-                response.addHeader("Content-Disposition", "inline;filename=" + URLEncoder.encode(fileName, StandardCharsets.UTF_8));
-
-                os = response.getOutputStream();
-                os.write(bytes);
-                os.flush();
-                os.close();
-            }
-        } catch (Exception e) {
-            log.warn("文件获取失败：" + fileName);
-        }
-    }
-
-    private String getContentType(String fileName) {
-        if (fileName.endsWith(".png")) {
-            return "image/png";
-        }
-        if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg")) {
-            return "image/jpeg";
-        }
-        if (fileName.endsWith(".gif")) {
-            return "image/gif";
-        }
-        if (fileName.endsWith(".webp")) {
-            return "image/webp";
-        }
-        if (fileName.endsWith(".svg")) {
-            return "image/svg+xml";
-        }
-        if (fileName.endsWith(".pdf")) {
-            return "application/pdf";
-        }
-        if (fileName.endsWith(".doc") || fileName.endsWith(".docx")) {
-            return "application/msword";
-        }
-        if (fileName.endsWith(".zip")) {
-            return "application/zip";
-        }
-        if (fileName.endsWith(".txt")) {
-            return "text/plain";
-        }
-        if (fileName.endsWith(".mp4")) {
-            return "video/mp4";
-        }
-        // 新增：支持AVI视频格式
-        if (fileName.endsWith(".avi")) {
-            return "video/x-msvideo";
-        }
-        // 新增：支持MOV视频格式
-        if (fileName.endsWith(".mov")) {
-            return "video/quicktime";
-        }
-        // 新增：支持WMV视频格式
-        if (fileName.endsWith(".wmv")) {
-            return "video/x-ms-wmv";
-        }
-        // 新增：支持FLV视频格式
-        if (fileName.endsWith(".flv")) {
-            return "video/x-flv";
-        }
-        // 新增：支持MKV视频格式
-        if (fileName.endsWith(".mkv")) {
-            return "video/x-matroska";
-        }
-        return "application/octet-stream";
     }
 }

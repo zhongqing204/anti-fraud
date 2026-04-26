@@ -3,6 +3,8 @@ package com.controller;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.common.Result;
 import com.entity.Report;
+import com.entity.User;
+import com.mapper.UserMapper;
 import com.service.ReportService;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -16,11 +18,15 @@ public class ReportController {
     @Resource
     private ReportService reportService;
 
+    @Resource
+    private UserMapper userMapper;
+
     /**
      * 添加
      */
     @PostMapping("/add")
     public Result add(@RequestBody Report report) {
+
         reportService.add(report);
         return Result.success("添加成功");
     }
@@ -30,6 +36,12 @@ public class ReportController {
      */
     @PutMapping("/update")
     public Result update(@RequestBody Report report) {
+        if (report.getUserId() != null) {
+            User user = userMapper.selectById(report.getUserId());
+            if (user != null) {
+                report.setUserName(user.getName());
+            }
+        }
         reportService.updateById(report);
         return Result.success("修改成功");
     }

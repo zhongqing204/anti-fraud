@@ -13,15 +13,16 @@
           <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px; border: 1px solid #dcdfe6; border-top: none; border-radius: 0 0 4px 4px; background: #f5f7fa;">
             <div style="display: flex; align-items: center; gap: 15px; flex: 1;">
               <el-upload
-                  :action="baseUrl + '/files/upload'"
+                  :action="baseUrl + '/file/upload'"
                   :on-success="handleFileUpload"
                   :on-remove="handleFileRemove"
                   :file-list="data.fileList"
                   multiple
-                  accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.pdf,.doc,.docx,.zip,.txt"
+                  accept=".jpg,.jpeg,.png,.gif,.webp,.bmp"
+                  :show-file-list="false"
               >
-                <el-icon style="font-size: 20px; cursor: pointer; color: #606266;" title="上传文件或图片">
-                  <Link />
+                <el-icon style="font-size: 20px; cursor: pointer; color: #606266;" title="上传图片">
+                  <Picture />
                 </el-icon>
               </el-upload>
               <div v-if="data.fileList.length > 0" style="display: flex; flex-wrap: wrap; gap: 8px;">
@@ -50,7 +51,7 @@ import {reactive, ref, onBeforeUnmount, shallowRef} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import router from "@/router/index.js";
-import {Link, Close} from "@element-plus/icons-vue";
+import {Picture, Close} from "@element-plus/icons-vue";
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 
@@ -108,9 +109,13 @@ const submit = () => {
 const handleFileUpload = (response, file, fileList) => {
   if (response.code === '200') {
     data.fileUrls.push(response.data)
-    ElMessage.success('文件上传成功')
+    data.fileList = fileList
+    // 只有当上传完成的文件数量等于当前文件列表数量时才提示
+    if (data.fileUrls.length === fileList.length) {
+      ElMessage.success('图片上传成功')
+    }
   } else {
-    ElMessage.error('文件上传失败')
+    ElMessage.error('图片上传失败')
   }
 }
 

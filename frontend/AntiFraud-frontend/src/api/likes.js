@@ -3,7 +3,7 @@ import request from '@/utils/request'
 // 点赞/取消点赞
 export function toggleLikes(data) {
     return request({
-        url: '/likes/add',
+        url: '/like/add',
         method: 'post',
         data
     })
@@ -12,7 +12,7 @@ export function toggleLikes(data) {
 // 查询所有点赞
 export function getLikeLsist(params) {
     return request({
-        url: '/likes/selectAll',
+        url: '/like/selectAll',
         method: 'get',
         params
     })
@@ -21,7 +21,7 @@ export function getLikeLsist(params) {
 // 分页查询点赞
 export function getLikesPage(params) {
     return request({
-        url: '/likes/selectPage',
+        url: '/like/selectPage',
         method: 'get',
         params
     })
@@ -30,7 +30,7 @@ export function getLikesPage(params) {
 // 删除点赞
 export function deleteLikes(id) {
     return request({
-        url: `/likes/delete/${id}`,
+        url: `/like/delete/${id}`,
         method: 'delete'
     })
 }
@@ -38,7 +38,7 @@ export function deleteLikes(id) {
 // 批量删除点赞
 export function deleteLikeBatchs(ids) {
     return request({
-        url: '/likes/delete/batch',
+        url: '/like/delete/batch',
         method: 'delete',
         data: ids
     })

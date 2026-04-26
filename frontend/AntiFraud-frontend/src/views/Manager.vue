@@ -76,16 +76,16 @@ import router from "@/router/index.js";
 import {ElMessage} from "element-plus";
 
 const data = reactive({
-  user: JSON.parse(localStorage.getItem('xm-user') || '{}')
+  user: JSON.parse(localStorage.getItem('xm-admin') || '{}')
 })
 
 const logout = () => {
-  localStorage.removeItem('xm-user')
+  localStorage.removeItem('xm-admin')
   router.push('/login')
 }
 
 const updateUser = () => {
-  data.user =  JSON.parse(localStorage.getItem('xm-user') || '{}')
+  data.user =  JSON.parse(localStorage.getItem('xm-admin') || '{}')
 }
 
 if (!data.user.id) {
