@@ -18,6 +18,8 @@ public class Report {
     private Integer userId;
     private String userName;
     private String content;
+    private String category;
+    private String priority;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime time;
     private String files;

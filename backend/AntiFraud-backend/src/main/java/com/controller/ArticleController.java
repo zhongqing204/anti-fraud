@@ -62,4 +62,10 @@ public class ArticleController {
         Page<Article> page = articleService.selectPage(userName, title, userId, status, pageNum, pageSize);
         return Result.success(page);
     }
+
+    @GetMapping("/selectTop2")
+    public Result selectTop2() {
+        List<Article> list = articleService.selectTop2();
+        return Result.success(list);
+    }
 }

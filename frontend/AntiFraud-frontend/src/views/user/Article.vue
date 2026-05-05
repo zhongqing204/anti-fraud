@@ -2,36 +2,74 @@
   <div>
     <div style="background-color: #f8f8f8; padding: 20px">
       <div style="width: 60%; margin: 0 auto; display: flex; align-items: center; justify-content: space-between">
-        <el-input prefix-icon="Search" v-model="data.title" @keyup.enter="load" clearable @clear="load" placeholder="请输入帖子名称查询" style="width: 400px; height: 40px"></el-input>
+        <div style="display: flex; align-items: center; gap: 15px">
+          <el-input prefix-icon="Search" v-model="data.title" @keyup.enter="load" clearable @clear="load" placeholder="请输入帖子名称查询" style="width: 350px; height: 40px"></el-input>
+          <el-popover trigger="manual" :width="300" v-model:visible="data.filterVisible">
+            <template #reference>
+              <el-button :type="data.hasFilter ? 'primary' : ''" @click="data.filterVisible = !data.filterVisible">
+                <el-icon><Filter /></el-icon>
+                筛选
+              </el-button>
+            </template>
+            <div style="padding: 10px" @click.stop>
+              <div style="margin-bottom: 15px">
+                <div style="font-weight: bold; margin-bottom: 8px">时间</div>
+                <el-select v-model="data.timeFilter" placeholder="请选择时间范围" clearable style="width: 100%" :teleported="false">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option label="最近一周" value="week" />
+                  <el-option label="最近一月" value="month" />
+                  <el-option label="最近三月" value="threeMonths" />
+                </el-select>
+              </div>
+              <div style="margin-bottom: 15px">
+                <div style="font-weight: bold; margin-bottom: 8px">内容类型</div>
+                <el-select v-model="data.contentType" placeholder="请选择内容类型" clearable style="width: 100%" :teleported="false">
+                  <el-option label="全部" :value="undefined" />
+                  <el-option label="图文" value="text" />
+                  <el-option label="视频" value="video" />
+                </el-select>
+              </div>
+              <div style="display: flex; gap: 10px; justify-content: flex-end">
+                <el-button size="small" @click="resetFilter">重置</el-button>
+                <el-button type="primary" size="small" @click="applyFilter">确定</el-button>
+              </div>
+            </div>
+          </el-popover>
+        </div>
         <el-button type="success" plain @click="handleAdd">发布帖子</el-button>
       </div>
     </div>
     <div style="width: 60%; margin: 30px auto">
-      <div class="card article-card" style="margin-bottom: 10px; padding: 20px" v-for="item in data.articleData" :key="item.id">
-        <div style="display: flex; align-items: center; margin-bottom: 15px">
-          <img :src="getAvatarUrl(item.userAvatar)" alt="" style="height: 30px; width: 30px; border-radius: 50%; object-fit: cover">
-          <div style="margin-left: 10px; color: #666666">{{ item.userName }}</div>
-          <div style="margin-left: auto; color: #999; font-size: 12px">{{ item.time }}</div>
+      <div class="card article-card" style="margin-bottom: 10px; padding: 20px" v-for="item in data.articleData" :key="item.id" @click="goToDetail(item.id)">
+        <div style="display: flex; align-items: flex-start; margin-bottom: 15px">
+        <img :src="getAvatarUrl(item.userAvatar)" alt="" style="height: 30px; width: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+        <div style="margin-left: 10px;">
+          <div style="color: #666666">{{ item.userName }}</div>
+          <div style="color: #999; font-size: 12px; margin-top: 2px;">{{ item.time }}</div>
         </div>
-        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; cursor: pointer" @click="router.push('/front/articleDetail?id=' + item.id)">{{ item.title }}</div>
+      </div>
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; cursor: pointer">{{ item.title }}</div>
         
-        <!-- 视频帖子直接显示视频播放器 -->
         <div v-if="isVideoPost(item.content)" class="video-preview" v-html="renderVideoInList(item.content)"></div>
-        <!-- 普通帖子显示文本预览 -->
-        <div v-else class="article-content-preview">{{ stripHtml(item.content) }}</div>
+        
+        <div v-else class="article-content-preview" v-html="stripHtml(item.content)"></div>
         
         <div style="margin-top: 15px; display: flex; gap: 40px; color: #999; font-size: 14px">
           <div style="display: flex; align-items: center; gap: 5px; cursor: pointer" @click.stop="toggleLike(item)">
             <img src="@/assets/images/点赞.png" alt="点赞" style="width: 16px; height: 16px" :style="{ filter: item.liked ? 'none' : 'grayscale(100%)', opacity: item.liked ? 1 : 0.5 }">
-            <span :style="{ color: item.liked ? '#F56C6C' : '' }">{{ item.likeCount || 0 }}</span>
+            <span :style="{ color: item.liked ? '#409EFF' : '' }">{{ item.likeCount || 0 }}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 5px; cursor: pointer" @click.stop="toggleCollect(item)">
             <img src="@/assets/images/收藏.png" alt="收藏" style="width: 16px; height: 16px" :style="{ filter: item.collected ? 'none' : 'grayscale(100%)', opacity: item.collected ? 1 : 0.5 }">
-            <span :style="{ color: item.collected ? '#E6A23C' : '' }">{{ item.collectCount || 0 }}</span>
+            <span :style="{ color: item.collected ? '#F56C6C' : '' }">{{ item.collectCount || 0 }}</span>
           </div>
-          <div style="display: flex; align-items: center; gap: 5px; cursor: pointer" @click.stop="router.push('/front/articleDetail?id=' + item.id)">
+          <div style="display: flex; align-items: center; gap: 5px; cursor: pointer" @click.stop="goToDetail(item.id)">
             <img src="@/assets/images/评论.png" alt="评论" style="width: 16px; height: 16px">
             <span>{{ item.commentCount || 0 }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; cursor: pointer" @click.stop="showArticleReportDialog(item)">
+            <img src="@/assets/images/举报.png" alt="举报" style="width: 16px; height: 16px">
+            <span>举报</span>
           </div>
         </div>
       </div>
@@ -42,7 +80,6 @@
 
     <el-dialog title="发布内容" v-model="data.formVisible" width="60%" destroy-on-close>
       <el-tabs v-model="data.activeTab" style="padding: 20px">
-        <!-- 发贴 -->
         <el-tab-pane label="发贴" name="post">
           <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="80px">
             <el-form-item prop="title" label="标题">
@@ -57,7 +94,7 @@
                   mode="default"
                 />
                 <Editor
-                  style="height: 350px; overflow-y: hidden;"
+                  style="height: 360px; overflow-y: hidden;"
                   v-model="data.form.content"
                   :defaultConfig="editorConfig"
                   mode="default"
@@ -66,87 +103,121 @@
               </div>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="savePost" style="width: 100%">发布</el-button>
+              <el-button type="primary" @click="savePost">发布</el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
-
-                <!-- 发视频 -->
-        <el-tab-pane label="发视频" name="video">
-          <el-form ref="videoFormRef" :rules="data.videoRules" :model="data.videoForm" label-width="100px">
-            <el-form-item prop="title" label="视频标题">
-              <el-input v-model="data.videoForm.title" placeholder="请输入视频标题（5-80字）" maxlength="80" show-word-limit></el-input>
+        
+        <el-tab-pane label="视频" name="video">
+          <el-form ref="videoFormRef" :rules="data.videoRules" :model="data.videoForm" label-width="80px">
+            <el-form-item prop="title" label="标题">
+              <el-input v-model="data.videoForm.title" placeholder="请输入视频标题"></el-input>
             </el-form-item>
-            <el-form-item label="上传视频">
-              <div style="border: 2px dashed #dcdfe6; border-radius: 8px; padding: 40px; text-align: center; background-color: #f5f7fa">
-                <el-icon :size="50" color="#909399"><VideoCamera /></el-icon>
-                <div style="margin-top: 15px; font-size: 16px; color: #606266">拖拽视频到此或点击上传</div>
-                <el-upload
-                  ref="uploadRef"
-                  :auto-upload="false"
-                  :on-change="handleVideoChange"
-                  :limit="1"
-                  accept="video/mp4,video/avi,video/mov,video/mkv"                  style="margin-top: 15px; display: inline-block"
-                >
-                  <el-button type="primary">上传视频</el-button>
-                </el-upload>
-                <div v-if="data.videoForm.videoUrl" style="margin-top: 15px; color: #67C23A">
-                  已选择: {{ data.videoForm.videoName }}
-                </div>
-              </div>
-              <div style="margin-top: 15px; color: #909399; font-size: 12px; line-height: 1.8">
-                <div><strong>视频大小</strong></div>
-                <div>视频文件大小不超过2G</div>
-                <div style="margin-top: 10px"><strong>分辨率&格式</strong></div>
-                <div>建议上传清晰视频，支持mp4/avi/mov/mkv格式</div>
+            <el-form-item label="视频">
+              <el-upload
+                :action="baseUrl + '/file/upload'"
+                :on-success="handleVideoUpload"
+                :limit="1"
+                accept=".mp4,.avi,.mov,.wmv,.flv"
+              >
+                <el-button type="primary">上传视频</el-button>
+              </el-upload>
+              <div v-if="data.videoForm.videoUrl" style="margin-top: 10px">
+                <video :src="encodeURI(baseUrl + data.videoForm.videoUrl)" controls style="width: 100%; max-height: 300px"></video>
               </div>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="saveVideo" style="width: 100%">发布</el-button>
+              <el-button type="primary" @click="saveVideo">发布</el-button>
             </el-form-item>
           </el-form>
         </el-tab-pane>
       </el-tabs>
     </el-dialog>
-  </div>
 
+    <el-dialog title="举报内容" v-model="data.articleReportVisible" width="500px" destroy-on-close>
+      <div style="padding: 20px">
+        <div style="margin-bottom: 20px">
+          <div style="font-weight: bold; margin-bottom: 10px">请选择举报原因</div>
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px">
+            <div 
+              v-for="type in data.reportTypes" 
+              :key="type"
+              @click="data.articleReportForm.reportType = type"
+              :style="{
+                padding: '10px',
+                textAlign: 'center',
+                background: data.articleReportForm.reportType === type ? '#409EFF' : '#f5f7fa',
+                color: data.articleReportForm.reportType === type ? '#fff' : '#333',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                transition: 'all 0.3s'
+              }"
+            >
+              {{ type }}
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 20px">
+          <div style="font-weight: bold; margin-bottom: 10px">
+            详细原因 <span style="color: #999; font-weight: normal">（必填）</span>
+          </div>
+          <el-input
+            v-model="data.articleReportForm.detailReason"
+            type="textarea"
+            :rows="4"
+            placeholder="请描述您遇到的问题"
+            maxlength="200"
+            show-word-limit
+          />
+        </div>
+
+        <div style="margin-bottom: 20px">
+          <div style="font-weight: bold; margin-bottom: 10px">
+            图片补充 <span style="color: #999; font-weight: normal">（选填）</span>
+          </div>
+          <el-upload
+            :action="baseUrl + '/file/upload'"
+            :on-success="handleArticleReportFileUpload"
+            :on-remove="handleArticleReportFileRemove"
+            :file-list="data.articleReportFileList"
+            list-type="picture-card"
+            :limit="3"
+            accept=".jpg,.jpeg,.png,.gif"
+          >
+            <el-icon><Plus /></el-icon>
+          </el-upload>
+        </div>
+
+        <div style="text-align: center">
+          <el-button type="primary" @click="submitArticleReport" :loading="data.articleReportSubmitting" style="width: 200px">
+            确定
+          </el-button>
+        </div>
+      </div>
+    </el-dialog>
+  </div>
 </template>
 
 <script setup>
-import {reactive, ref, onBeforeUnmount, shallowRef, markRaw} from "vue";
+import {reactive, ref, markRaw, onBeforeUnmount} from "vue";
+import {Editor, Toolbar} from "@wangeditor/editor-for-vue";
+import "@wangeditor/editor/dist/css/style.css";
 import request from "@/utils/request.js";
 import {ElMessage} from "element-plus";
-import {VideoCamera} from "@element-plus/icons-vue";
 import router from "@/router/index.js";
-import '@wangeditor/editor/dist/css/style.css'
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
+import { Plus, Filter } from "@element-plus/icons-vue";
 
-const formRef = ref()
-const videoFormRef = ref()
-const uploadRef = ref()
 const baseUrl = import.meta.env.VITE_BASE_URL
-const editorRef = shallowRef()
+const editorRef = ref(null)
+const formRef = ref(null)
+const videoFormRef = ref(null)
 
 const toolbarConfig = {}
+const editorConfig = { placeholder: '请输入内容...' }
 
-const editorConfig = { 
-  placeholder: '请输入正文（建议200-2000字）',
-  MENU_CONF: {
-    uploadImage: {
-      server: baseUrl + '/file/upload',
-      fieldName: 'file',
-      maxFileSize: 10 * 1024 * 1024,
-      allowedFileTypes: ['image/*'],
-      customInsert(res, insertFn) {
-        if (res.code === '200') {
-          const url = res.data.startsWith('http') ? res.data : baseUrl + res.data
-          insertFn(url, '', url)
-        } else {
-          ElMessage.error(res.msg || '上传失败')
-        }
-      }
-    }
-  }
+const handleCreated = (editor) => {
+  editorRef.value = markRaw(editor)
 }
 
 onBeforeUnmount(() => {
@@ -155,37 +226,54 @@ onBeforeUnmount(() => {
   editor.destroy()
 })
 
-const handleCreated = (editor) => {
-  editorRef.value = markRaw(editor)
-}
-
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
   title: null,
+  timeFilter: null,
+  contentType: null,
   pageNum: 1,
   pageSize: 10,
   total: 0,
   articleData: [],
-  form: {},
-  videoForm: {},
   formVisible: false,
   activeTab: 'post',
+  form: {
+    title: '',
+    content: ''
+  },
+  videoForm: {
+    title: '',
+    videoUrl: ''
+  },
   rules: {
     title: [
       { required: true, message: '请输入帖子标题', trigger: 'blur' },
+      { min: 5, max: 31, message: '标题长度在 5 到 31 个字符', trigger: 'blur' }
     ],
     content: [
-      { required: true, message: '请输入帖子内容', trigger: 'blur' },
-    ],
+      { required: true, message: '请输入帖子内容', trigger: 'blur' }
+    ]
   },
   videoRules: {
     title: [
-      { required: true, message: '请输入视频标题', trigger: 'blur' },
-    ],
-  }
+      { required: true, message: '请输入视频标题', trigger: 'blur' }
+    ]
+  },
+  articleReportVisible: false,
+  articleReportSubmitting: false,
+  reportTypes: ['色情低俗', '垃圾广告', '辱骂攻击', '违法犯罪', '时政不实信息', '青少年不宜', '侵犯权益', '开盒网暴'],
+  articleReportForm: {
+    reportType: '',
+    detailReason: '',
+    files: ''
+  },
+  articleReportFileList: [],
+  articleReportFileUrls: [],
+  currentArticleId: null,
+  filterVisible: false,
+  hasFilter: false
 })
 
-// 获取头像URL的辅助函数
 const getAvatarUrl = (avatar) => {
   if (!avatar) return '/default-avatar.png'
   if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
@@ -194,266 +282,316 @@ const getAvatarUrl = (avatar) => {
   return baseUrl + avatar
 }
 
-// 点赞/取消点赞 - 操作后重新加载数据，确保状态与后端同步
-const toggleLike = (item) => {
-  request.post('/likes/add', {
-    userId: data.user.id,
-    articleId: item.id,
-    userName: data.user.name,
-    articleTitle: item.title
-  }).then(res => {
-    if (res.code === '200') {
-      load()
-    }
-  })
+// 重置筛选条件
+const resetFilter = () => {
+  data.timeFilter = null
+  data.contentType = null
+  applyFilter()
 }
 
-// 收藏/取消收藏 - 操作后重新加载数据，确保状态与后端同步
-const toggleCollect = (item) => {
-  request.post('/collect/add', {
-    userId: data.user.id,
-    articleId: item.id,
-    userName: data.user.name,
-    articleTitle: item.title
-  }).then(res => {
-    if (res.code === '200') {
-      load()
-    }
-  })
+// 应用筛选条件
+const applyFilter = () => {
+  data.filterVisible = false
+  data.pageNum = 1
+  updateFilterStatus()
+  load()
 }
 
-// 打开发布对话框
-const handleAdd = () => {
-  data.form = {}
-  data.form.userId = data.user.id
-  data.form.status = '审核通过'
-  data.form.content = ''
-  data.videoForm = {}
-  data.videoForm.userId = data.user.id
-  data.videoForm.status = '审核通过'
-  data.activeTab = 'post'
-  data.formVisible = true
+// 更新筛选状态
+const updateFilterStatus = () => {
+  data.hasFilter = !!(data.timeFilter || data.contentType)
 }
 
-// 发布帖子
-const savePost = () => {
-  formRef.value.validate(valid => {
-    if (valid) {
-      if (!data.form.content || data.form.content === '<p><br></p>') {
-        ElMessage.error('请填写帖子内容')
-        return
-      }
-      request.post('/article/add', data.form).then(res => {
-        if (res.code === '200') {
-          ElMessage.success('发布成功')
-          data.formVisible = false
-          data.form.content = ''
-          load()
-        } else {
-          ElMessage.error(res.msg)
-        }
-      })
-    }
-  })
-}
-
-// 视频文件选择
-const handleVideoChange = (file) => {
-  data.videoForm.videoFile = file.raw
-  data.videoForm.videoName = file.name
-  
-  // 上传视频文件
-  const formData = new FormData()
-  formData.append('file', file.raw)
-  
-  request.post('/file/upload', formData).then(res => {
-    if (res.code === '200') {
-      data.videoForm.videoUrl = res.data
-      ElMessage.success('视频上传成功')
-    } else {
-      ElMessage.error(res.msg || '视频上传失败')
-    }
-  })
-}
-
-// 发布视频
-const saveVideo = () => {
-  videoFormRef.value.validate(valid => {
-    if (valid) {
-      if (!data.videoForm.videoUrl) {
-        ElMessage.error('请上传视频')
-        return
-      }
-      
-      // 根据文件扩展名获取MIME类型
-      const getVideoType = (url) => {
-        if (url.endsWith('.mp4')) return 'video/mp4'
-        if (url.endsWith('.avi')) return 'video/x-msvideo'
-        if (url.endsWith('.mov')) return 'video/quicktime'
-        if (url.endsWith('.wmv')) return 'video/x-ms-wmv'
-        if (url.endsWith('.flv')) return 'video/x-flv'
-        if (url.endsWith('.mkv')) return 'video/x-matroska'
-        return 'video/mp4'
-      }
-      
-      // 只对文件名进行URL编码，保留路径结构
-      const pathParts = data.videoForm.videoUrl.split('/')
-      const fileName = pathParts[pathParts.length - 1]
-      pathParts[pathParts.length - 1] = encodeURIComponent(fileName)
-      const videoUrl = baseUrl + pathParts.join('/')
-      const videoType = getVideoType(data.videoForm.videoUrl)
-      
-      // 将视频URL嵌入到内容中
-      data.videoForm.content = `<video controls style="width: 100%; max-width: 800px" preload="metadata"><source src="${videoUrl}" type="${videoType}">您的浏览器不支持视频播放</video>`
-      
-      request.post('/article/add', data.videoForm).then(res => {
-        if (res.code === '200') {
-          ElMessage.success('发布成功')
-          data.formVisible = false
-          data.videoForm = {}
-          load()
-        } else {
-          ElMessage.error(res.msg)
-        }
-      })
-    }
-  })
-}
-
-// 去除HTML标签
-const stripHtml = (html) => {
-  if (!html) return ''
-  const tmp = document.createElement('div')
-  tmp.innerHTML = html
-  
-  // 移除所有video标签及其内容，避免显示降级文本
-  const videos = tmp.querySelectorAll('video')
-  videos.forEach(video => {
-    if (video.parentNode) {
-      video.parentNode.removeChild(video)
-    }
-  })
-  
-  return tmp.textContent || tmp.innerText || ''
-}
-
-// 判断是否为视频帖子
-const isVideoPost = (content) => {
-  if (!content) return false
-  return content.includes('<video') && content.includes('<source')
-}
-
-// 在列表中渲染视频
-const renderVideoInList = (content) => {
-  if (!content) return ''
-  return content.replace(
-    /<source\s+src="([^"]+)"([^>]*)>/g,
-    (match, src, attrs) => {
-      let videoUrl = src
-      if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
-        // 只对文件名进行URL编码，保留路径结构
-        const pathParts = videoUrl.split('/')
-        const fileName = pathParts[pathParts.length - 1]
-        pathParts[pathParts.length - 1] = encodeURIComponent(fileName)
-        videoUrl = baseUrl + pathParts.join('/')
-      }
-      return `<source src="${videoUrl}"${attrs}>`
-    }
-  ).replace(
-    /<video([^>]*)>/,
-    '<video$1 style="width: 100%; max-height: 400px; border-radius: 8px; margin-bottom: 15px">'
-  )
-}
-
-// 加载帖子列表 - 增加查询用户点赞和收藏状态，确保显示正确的交互状态
 const load = () => {
   request.get('/article/selectPage', {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
-      title: data.title,
-      status: '审核通过'
+      title: data.title
     }
   }).then(res => {
     if (res.code === '200') {
-      const articles = res.data?.records || []
+      let articleData = res.data?.records || []
       data.total = res.data?.total || 0
       
-      // 批量查询当前用户的点赞和收藏状态
-      const articleIds = articles.map(a => a.id)
-      if (articleIds.length > 0) {
-        // 查询用户的所有点赞记录
-        request.get('/likes/selectAll', {
-          params: { userId: data.user.id }
-        }).then(likeRes => {
-          if (likeRes.code === '200') {
-            const userLikes = likeRes.data || []
-            const likedArticleIds = new Set(userLikes.map(l => l.articleId))
-            
-            // 查询用户的所有收藏记录
-            request.get('/collect/selectAll', {
-              params: { userId: data.user.id }
-            }).then(collectRes => {
-              if (collectRes.code === '200') {
-                const userCollects = collectRes.data || []
-                const collectedArticleIds = new Set(userCollects.map(c => c.articleId))
-                
-                // 设置每篇文章的点赞和收藏状态
-                articles.forEach(article => {
-                  article.liked = likedArticleIds.has(article.id)
-                  article.collected = collectedArticleIds.has(article.id)
-                })
-                
-                data.articleData = articles
-              }
-            })
+      // 时间筛选
+      if (data.timeFilter) {
+        const now = new Date()
+        articleData = articleData.filter(item => {
+          const createTime = new Date(item.time)
+          const diffDays = (now - createTime) / (1000 * 60 * 60 * 24)
+          
+          switch(data.timeFilter) {
+            case 'week':
+              return diffDays <= 7
+            case 'month':
+              return diffDays <= 30
+            case 'threeMonths':
+              return diffDays <= 90
+            default:
+              return true
           }
         })
-      } else {
-        data.articleData = articles
       }
+      
+      // 内容类型筛选
+      if (data.contentType) {
+        articleData = articleData.filter(item => {
+          if (data.contentType === 'video') {
+            return isVideoPost(item.content)
+          } else if (data.contentType === 'text') {
+            return !isVideoPost(item.content)
+          }
+          return true
+        })
+      }
+      
+      data.articleData = articleData
     } else {
       ElMessage.error(res.msg)
     }
   })
 }
 
-load()
+const toggleLike = (article) => {
+  if (!data.user.id) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  
+  request.post('/likes/add', {
+    userId: data.user.id,
+    articleId: article.id,
+    userName: data.user.name,
+    articleTitle: article.title
+  }).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('操作成功')
+      load()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
 
+const toggleCollect = (article) => {
+  if (!data.user.id) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  
+  request.post('/collect/add', {
+    userId: data.user.id,
+    articleId: article.id,
+    userName: data.user.name,
+    articleTitle: article.title
+  }).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('操作成功')
+      load()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+const goToDetail = (id) => {
+  router.push('/front/articleDetail?id=' + id)
+}
+
+const handleAdd = () => {
+  data.formVisible = true
+  data.activeTab = 'post'
+  data.form = {
+    title: '',
+    content: ''
+  }
+  data.videoForm = {
+    title: '',
+    videoUrl: ''
+  }
+}
+
+const savePost = () => {
+  formRef.value.validate(valid => {
+    if (valid) {
+      request.post('/article/add', {
+        ...data.form,
+        userId: data.user.id,
+        userName: data.user.name,
+        userAvatar: data.user.avatar
+      }).then(res => {
+        if (res.code === '200') {
+          ElMessage.success('发布成功')
+          data.formVisible = false
+          load()
+        } else {
+          ElMessage.error(res.msg)
+        }
+      })
+    }
+  })
+}
+
+const saveVideo = () => {
+  videoFormRef.value.validate(valid => {
+    if (valid) {
+      if (!data.videoForm.videoUrl) {
+        ElMessage.warning('请上传视频')
+        return
+      }
+      
+      const videoContent = `<video src="${data.videoForm.videoUrl}" controls></video>`
+      
+      request.post('/article/add', {
+        title: data.videoForm.title,
+        content: videoContent,
+        userId: data.user.id,
+        userName: data.user.name,
+        userAvatar: data.user.avatar
+      }).then(res => {
+        if (res.code === '200') {
+          ElMessage.success('发布成功')
+          data.formVisible = false
+          load()
+        } else {
+          ElMessage.error(res.msg)
+        }
+      })
+    }
+  })
+}
+
+const handleVideoUpload = (res) => {
+  if (res.code === '200') {
+    data.videoForm.videoUrl = res.data
+    ElMessage.success('上传成功')
+  } else {
+    ElMessage.error(res.msg || '上传失败')
+  }
+}
+
+const isVideoPost = (content) => {
+  if (!content) return false
+  return content.includes('<video') || content.includes('<iframe')
+}
+
+const renderVideoInList = (content) => {
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = content
+  const video = tempDiv.querySelector('video')
+  if (video) {
+    const src = video.getAttribute('src')
+    return `<video src="${encodeURI(baseUrl + src)}" controls style="width: 100%; max-height: 400px; border-radius: 8px;"></video>`
+  }
+  return content
+}
+
+const stripHtml = (html) => {
+  if (!html) return ''
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = html
+  return tempDiv.textContent || tempDiv.innerText || ''
+}
+
+const showArticleReportDialog = (article) => {
+  data.currentArticleId = article.id
+  data.articleReportVisible = true
+  data.articleReportForm = {
+    reportType: '',
+    detailReason: '',
+    files: ''
+  }
+  data.articleReportFileList = []
+  data.articleReportFileUrls = []
+}
+
+const handleArticleReportFileUpload = (res) => {
+  if (res.code === '200') {
+    const url = baseUrl + res.data
+    data.articleReportFileUrls.push(url)
+    data.articleReportForm.files = data.articleReportFileUrls.join(',')
+  } else {
+    ElMessage.error(res.msg || '上传失败')
+  }
+}
+
+const handleArticleReportFileRemove = (file, fileList) => {
+  const index = data.articleReportFileList.indexOf(file)
+  if (index > -1) {
+    data.articleReportFileUrls.splice(index, 1)
+    data.articleReportForm.files = data.articleReportFileUrls.join(',')
+  }
+}
+
+const submitArticleReport = () => {
+  if (!data.articleReportForm.reportType) {
+    ElMessage.warning('请选择举报原因')
+    return
+  }
+  if (!data.articleReportForm.detailReason) {
+    ElMessage.warning('请填写详细原因')
+    return
+  }
+  
+  data.articleReportSubmitting = true
+  request.post('/articleReport/add', {
+    articleId: data.currentArticleId,
+    userId: data.user.id,
+    userName: data.user.name,
+    reportType: data.articleReportForm.reportType,
+    detailReason: data.articleReportForm.detailReason,
+    files: data.articleReportForm.files
+  }).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('举报成功')
+      data.articleReportVisible = false
+    } else {
+      ElMessage.error(res.msg)
+    }
+  }).finally(() => {
+    data.articleReportSubmitting = false
+  })
+}
+
+load()
 </script>
 
 <style scoped>
-.article-content-preview {
-  color: #666666;
-  line-height: 1.6;
+.line1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  line-clamp: 1;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 4;
-  line-clamp: 4;
-  -webkit-box-orient: vertical;
-  word-break: break-all;
-}
-
-.video-preview {
-  margin-bottom: 15px;
-}
-
-.video-preview :deep(video) {
-  width: 100%;
-  max-height: 400px;
-  border-radius: 8px;
-  background: #000;
 }
 
 .article-card {
-  cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s;
 }
 
 .article-card:hover {
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
+}
+
+.article-content-preview {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  word-wrap: break-word;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.video-preview {
+  margin: 10px 0;
+  width: 100%;
+}
+
+.video-preview video {
+  width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
 }
 </style>
-

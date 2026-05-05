@@ -14,4 +14,6 @@ public interface PublicityService extends IService<Publicity> {
     List<Publicity> selectAll(Publicity publicity);
 
     Page<Publicity> selectPage(Publicity publicity, Integer pageNum, Integer pageSize);
+
+    List<Publicity> selectTop4();
 }

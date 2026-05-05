@@ -3,16 +3,15 @@ package com.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.entity.Category;
-import com.entity.Publicity;
+import com.entity.*;
 import com.mapper.PublicityMapper;
-import com.service.CategoryService;
-import com.service.PublicityService;
+import com.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -20,6 +19,15 @@ public class PublicityServiceImpl extends ServiceImpl<PublicityMapper, Publicity
 
     @Autowired
     private CategoryService categoryService;
+
+    @Autowired
+    private LikesService likesService;
+
+    @Autowired
+    private CollectService collectService;
+
+    @Autowired
+    private CommentService commentService;
 
     @Override
     public void add(Publicity publicity) {
@@ -36,6 +44,11 @@ public class PublicityServiceImpl extends ServiceImpl<PublicityMapper, Publicity
 
     @Override
     public void deleteBatch(List<Integer> ids) {
+        for (Integer publicityId : ids) {
+            likesService.remove(new LambdaQueryWrapper<Likes>().eq(Likes::getPublicityId, publicityId));
+            collectService.remove(new LambdaQueryWrapper<Collect>().eq(Collect::getPublicityId, publicityId));
+            commentService.remove(new LambdaQueryWrapper<Comment>().eq(Comment::getPublicityId, publicityId));
+        }
         this.removeByIds(ids);
     }
 
@@ -83,5 +96,15 @@ public class PublicityServiceImpl extends ServiceImpl<PublicityMapper, Publicity
             }
         }
         return pageData;
+    }
+
+    @Override
+    public List<Publicity> selectTop4() {
+        // 查询所有宣传内容
+        List<Publicity> allPublicities = this.list();
+        // 随机打乱列表
+        Collections.shuffle(allPublicities);
+        // 返回前4条，如果不足4条则返回全部
+        return allPublicities.subList(0, Math.min(4, allPublicities.size()));
     }
 }

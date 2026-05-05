@@ -15,6 +15,13 @@ public class ActivitySignup {
     private Integer id;
     private Integer activityId;
     private Integer userId;
+    private String realName;
+    private String phone;
+    private String email;
+    private String gender;
+    private Integer age;
+    private String organization;
+    private String remark;
     private String status;
     private String reason;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

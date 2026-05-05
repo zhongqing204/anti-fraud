@@ -19,7 +19,11 @@ public class MybatisPlusConfig {
     @Bean
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-        interceptor.addInnerInterceptor(new PaginationInnerInterceptor());
+        PaginationInnerInterceptor paginationInnerInterceptor = new PaginationInnerInterceptor();
+        paginationInnerInterceptor.setDbType(com.baomidou.mybatisplus.annotation.DbType.MYSQL);
+        paginationInnerInterceptor.setOverflow(false);
+        paginationInnerInterceptor.setMaxLimit(500L);
+        interceptor.addInnerInterceptor(paginationInnerInterceptor);
         return interceptor;
     }
 

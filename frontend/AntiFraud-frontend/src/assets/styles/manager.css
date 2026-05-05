@@ -39,7 +39,7 @@
 .manager-main-left {
     width: 200px;
     box-shadow: 0 0 6px rgba(0, 21, 41, .33);
-    height: calc(100vh - 60px);
+    min-height: calc(100vh - 60px);
     overflow-y: auto;
 }
 

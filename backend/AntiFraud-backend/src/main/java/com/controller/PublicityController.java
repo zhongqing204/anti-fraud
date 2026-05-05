@@ -89,4 +89,10 @@ public class PublicityController {
         Page<Publicity> page = publicityService.selectPage(publicity, pageNum, pageSize);
         return Result.success(page);
     }
+
+    @GetMapping("/selectTop4")
+    public Result selectTop4() {
+        List<Publicity> list = publicityService.selectTop4();
+        return Result.success(list);
+    }
 }

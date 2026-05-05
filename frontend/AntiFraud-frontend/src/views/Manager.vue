@@ -1,3 +1,4 @@
+D:\anti-fraud\frontend\AntiFraud-frontend\src\views\Manager.vue
 <template>
   <div class="manager-container">
     <div class="manager-header">
@@ -27,30 +28,93 @@
     <div style="display: flex">
       <div class="manager-main-left">
         <el-menu :default-active="router.currentRoute.value.path"
-                 :default-openeds="['1', '2']"
+                 :default-openeds="['1', '2', '3', '4', '5', '6', '7']"
                  router
         >
           <el-menu-item index="/manager/home">
             <el-icon><HomeFilled /></el-icon>
             <span>系统首页</span>
           </el-menu-item>
+          
+          <!-- 【修改】分类管理 -->
           <el-sub-menu index="1">
             <template #title>
               <el-icon><Menu /></el-icon>
-              <span>信息管理</span>
+              <span>分类管理</span>
             </template>
             <el-menu-item index="/manager/category">反诈分类</el-menu-item>
+          </el-sub-menu>
+          
+          <!-- 【修改】宣传管理 -->
+          <el-sub-menu index="2">
+            <template #title>
+              <el-icon><Document /></el-icon>
+              <span>宣传管理</span>
+            </template>
             <el-menu-item index="/manager/publicity">反诈宣传</el-menu-item>
-            <el-menu-item index="/manager/activity">反诈活动</el-menu-item>
-            <el-menu-item index="/manager/activitySignUp">报名管理</el-menu-item>
+            <el-menu-item index="/manager/publicityLikes">宣传点赞</el-menu-item>
+            <el-menu-item index="/manager/publicityCollects">宣传收藏</el-menu-item>
+            <el-menu-item index="/manager/publicityComments">宣传评论</el-menu-item>
+          </el-sub-menu>
+          
+          <!-- 【修改】视频管理 -->
+          <el-sub-menu index="3">
+            <template #title>
+              <el-icon><VideoCamera /></el-icon>
+              <span>视频管理</span>
+            </template>
+            <el-menu-item index="/manager/video">反诈视频</el-menu-item>
+            <el-menu-item index="/manager/videoLikes">视频点赞</el-menu-item>
+            <el-menu-item index="/manager/videoCollects">视频收藏</el-menu-item>
+            <el-menu-item index="/manager/videoComments">视频评论</el-menu-item>
+          </el-sub-menu>
+          
+          <!-- 【修改】论坛管理 -->
+          <el-sub-menu index="4">
+            <template #title>
+              <el-icon><ChatDotRound /></el-icon>
+              <span>论坛管理</span>
+            </template>
             <el-menu-item index="/manager/article">帖子管理</el-menu-item>
             <el-menu-item index="/manager/likes">点赞信息</el-menu-item>
             <el-menu-item index="/manager/collect">收藏信息</el-menu-item>
             <el-menu-item index="/manager/comment">评论信息</el-menu-item>
+            <el-menu-item index="/manager/articleReport">帖子举报管理</el-menu-item>
+          </el-sub-menu>
+          
+          <!-- 【修改】活动管理 -->
+          <el-sub-menu index="5">
+            <template #title>
+              <el-icon><Calendar /></el-icon>
+              <span>活动管理</span>
+            </template>
+            <el-menu-item index="/manager/activity">反诈活动</el-menu-item>
+            <el-menu-item index="/manager/activitySignUp">报名管理</el-menu-item>
+            <el-menu-item index="/manager/activityLikes">活动点赞</el-menu-item>
+            <el-menu-item index="/manager/activityCollects">活动收藏</el-menu-item>
+            <el-menu-item index="/manager/activityComments">活动评论</el-menu-item>
+          </el-sub-menu>
+          
+          <!-- 【修改】举报管理 -->
+          <el-sub-menu index="6">
+            <template #title>
+              <el-icon><Warning /></el-icon>
+              <span>举报管理</span>
+            </template>
             <el-menu-item index="/manager/report">举报管理</el-menu-item>
+          </el-sub-menu>
+          
+          <!-- 【修改】系统管理 -->
+          <el-sub-menu index="7">
+            <template #title>
+              <el-icon><Bell /></el-icon>
+              <span>系统管理</span>
+            </template>
             <el-menu-item index="/manager/notice">系统公告</el-menu-item>
           </el-sub-menu>
-          <el-sub-menu index="2">
+          
+          <!-- 【修改】用户管理 -->
+          <el-sub-menu index="8">
             <template #title>
               <el-icon><User /></el-icon>
               <span>用户管理</span>

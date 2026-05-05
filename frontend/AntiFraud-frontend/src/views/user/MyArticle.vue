@@ -1,34 +1,52 @@
 <template>
-  <div style="width: 70%; margin: 20px auto">
-    <div style="font-size: 18px">我的帖子</div>
-    <div style="margin-top: 20px; padding: 20px" class="card">
-      <div style="margin-bottom: 20px">
-        <el-input clearable @clear="reset" v-model="data.title" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入帖子标题查询"></el-input>
-        <el-button type="info" plain @click="load">查询</el-button>
+  <div>
+    <div style="background-color: #f8f8f8; padding: 20px">
+      <div style="width: 60%; margin: 0 auto; display: flex; align-items: center; justify-content: space-between">
+        <div style="font-size: 20px; font-weight: bold">
+          我的帖子
+          <span v-if="data.total > 0" style="color: #409EFF; margin-left: 8px">（{{ data.total }}）</span>
+        </div>
         <el-button type="success" plain @click="handleAdd">发布帖子</el-button>
       </div>
-      <el-table stripe :data="data.tableData">
-        <el-table-column prop="title" label="帖子名称" width="200" show-overflow-tooltip />
-        <el-table-column prop="userName" label="用户名称" />
-        <el-table-column prop="time" label="发布时间" />
-        <el-table-column prop="status" label="审核状态">
-          <template v-slot="scope">
-            <el-tag type="warning" v-if="scope.row.status === '待审核'">{{ scope.row.status }}</el-tag>
-            <el-tag type="success" v-if="scope.row.status === '审核通过'">{{ scope.row.status }}</el-tag>
-            <el-tag type="danger" v-if="scope.row.status === '审核拒绝'">{{ scope.row.status }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="reason" label="审核说明" />
-        <el-table-column label="操作" width="100" fixed="right">
-          <template v-slot="scope">
-            <el-button type="primary" circle :icon="Edit" @click="handleEdit(scope.row)"></el-button>
-            <el-button type="danger" circle :icon="Delete" @click="del(scope.row.id)"></el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
+    </div>
+    <div style="width: 60%; margin: 30px auto">
+      <div class="card article-card" style="margin-bottom: 10px; padding: 20px" v-for="item in data.tableData" :key="item.id">
+        <div style="display: flex; align-items: center; margin-bottom: 15px">
+          <img :src="getAvatarUrl(item.userAvatar)" alt="" style="height: 30px; width: 30px; border-radius: 50%; object-fit: cover">
+          <div style="margin-left: 10px; color: #666666">{{ item.userName }}</div>
+          <div style="margin-left: auto; color: #999; font-size: 12px">{{ formatTime(item.time) }}</div>
+        </div>
+        <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px; cursor: pointer" @click="goToDetail(item.id)">
+          {{ item.title }}
+        </div>
+        
+        <div v-if="isVideoPost(item.content)" class="video-preview" v-html="renderVideoInList(item.content)" @click="goToDetail(item.id)"></div>
+        
+        <div v-else class="article-content-preview" v-html="stripHtml(item.content)" @click="goToDetail(item.id)"></div>
+        
+        <div style="margin-top: 15px; display: flex; gap: 40px; color: #999; font-size: 14px">
+          <div style="display: flex; align-items: center; gap: 5px">
+            <img src="@/assets/images/点赞.png" alt="点赞" style="width: 16px; height: 16px">
+            <span>{{ item.likeCount || 0 }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px">
+            <img src="@/assets/images/收藏.png" alt="收藏" style="width: 16px; height: 16px">
+            <span>{{ item.collectCount || 0 }}</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px">
+            <img src="@/assets/images/评论.png" alt="评论" style="width: 16px; height: 16px">
+            <span>{{ item.commentCount || 0 }}</span>
+          </div>
+          <div style="margin-left: auto; display: flex; gap: 10px">
+            <el-button type="danger" size="small" @click.stop="handleDelete(item)">删除</el-button>
+          </div>
+        </div>
+      </div>
       <div v-if="data.total" style="margin-top: 20px">
         <el-pagination @current-change="load" layout="total, prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
+      </div>
+      <div v-else style="text-align: center; padding: 50px; color: #999">
+        暂无发布的帖子
       </div>
     </div>
 
@@ -66,17 +84,16 @@
 </template>
 
 <script setup>
-import {reactive, ref, onBeforeUnmount, shallowRef, markRaw} from "vue";
+import {reactive, ref, onBeforeUnmount, markRaw} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import router from "@/router/index.js";
-import {Delete, Edit} from "@element-plus/icons-vue";
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
 const formRef = ref()
 const baseUrl = import.meta.env.VITE_BASE_URL
-const editorRef = shallowRef()
+const editorRef = ref(null)
 
 const toolbarConfig = {}
 
@@ -112,9 +129,8 @@ const handleCreated = (editor) => {
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
-  title: null,
   pageNum: 1,
-  pageSize: 5,
+  pageSize: 10,
   form: {},
   formVisible: false,
   tableData: [],
@@ -129,12 +145,49 @@ const data = reactive({
   }
 })
 
+const getAvatarUrl = (avatar) => {
+  if (!avatar) return '/default-avatar.png'
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    return avatar
+  }
+  return baseUrl + avatar
+}
+
+const stripHtml = (html) => {
+  const tmp = document.createElement('div')
+  tmp.innerHTML = html
+  return tmp.textContent || tmp.innerText || ''
+}
+
+const formatTime = (time) => {
+  if (!time) return ''
+  return time.replace('T', ' ').substring(0, 19)
+}
+
+const isVideoPost = (content) => {
+  return content && content.includes('<video')
+}
+
+const renderVideoInList = (content) => {
+  const tempDiv = document.createElement('div')
+  tempDiv.innerHTML = content
+  const video = tempDiv.querySelector('video')
+  if (video) {
+    const src = video.getAttribute('src')
+    return `<video src="${encodeURI(baseUrl + src)}" controls style="width: 100%; max-height: 400px; border-radius: 8px;"></video>`
+  }
+  return content
+}
+
+const goToDetail = (id) => {
+  router.push('/front/articleDetail?id=' + id)
+}
+
 const load = () => {
   request.get('/article/selectPage', {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
-      title: data.title,
       userId: data.user.id
     }
   }).then(res => {
@@ -151,38 +204,8 @@ load()
 const handleAdd = () => {
   data.form = {}
   data.form.userId = data.user.id
-  data.form.status = '待审核'
   data.form.content = ''
   data.formVisible = true
-}
-
-const handleEdit = (row) => {
-  data.form = JSON.parse(JSON.stringify(row))
-  data.formVisible = true
-}
-
-const add = () => {
-  request.post('/article/add', data.form).then(res => {
-    if (res.code === '200') {
-      ElMessage.success('发布成功')
-      data.formVisible = false
-      data.form.content = ''
-      load()
-    } else {
-      ElMessage.error(res.msg)
-    }
-  })
-}
-
-const update = () => {
-  request.put('/article/update', data.form).then(res => {
-    if (res.code === '200') {
-      ElMessage.success('操作成功')
-      data.formVisible = false
-      data.form.content = ''
-      load()
-    }
-  })
 }
 
 const save = () => {
@@ -192,33 +215,72 @@ const save = () => {
         ElMessage.error('请填写帖子内容')
         return
       }
-      data.form.id ? update() : add()
+      request.post('/article/add', data.form).then(res => {
+        if (res.code === '200') {
+          ElMessage.success('发布成功')
+          data.formVisible = false
+          data.form.content = ''
+          load()
+        } else {
+          ElMessage.error(res.msg)
+        }
+      })
     }
   })
 }
 
-const del = (id) => {
-  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete('/article/delete/' + id).then(res => {
+// 删除帖子
+const handleDelete = (item) => {
+  ElMessageBox.confirm('确定要删除该帖子吗？删除后无法恢复', '确认删除', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    request.delete('/article/delete/' + item.id).then(res => {
       if (res.code === '200') {
-        ElMessage.success("删除成功")
+        ElMessage.success('删除成功')
         load()
       } else {
         ElMessage.error(res.msg)
       }
     })
-  }).catch(err => {
-    console.error(err)
-  })
+  }).catch(() => {})
 }
-
-const reset = () => {
-  data.title = null
-  load()
-}
-
 </script>
 
 <style scoped>
+.article-content-preview {
+  color: #666666;
+  line-height: 1.6;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
+  cursor: pointer;
+}
 
+.video-preview {
+  margin-bottom: 15px;
+  cursor: pointer;
+}
+
+.video-preview :deep(video) {
+  width: 100%;
+  max-height: 400px;
+  border-radius: 8px;
+  background: #000;
+}
+
+.article-card {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.article-card:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
 </style>

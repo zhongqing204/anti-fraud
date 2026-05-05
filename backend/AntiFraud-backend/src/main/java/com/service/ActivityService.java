@@ -15,4 +15,6 @@ public interface ActivityService extends IService<Activity> {
 
     Page<Activity> selectPage(Activity activity, Integer pageNum, Integer pageSize);
 
+    List<Activity> selectTop4();
+
 }

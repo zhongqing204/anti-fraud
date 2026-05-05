@@ -1,15 +1,18 @@
 package com.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.entity.Article;
 import com.entity.Collect;
+import com.entity.Message;
 import com.entity.User;
 import com.mapper.ArticleMapper;
 import com.mapper.CollectMapper;
 import com.mapper.UserMapper;
 import com.service.CollectService;
+import com.service.MessageService;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
@@ -25,37 +28,55 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
     @Resource
     private ArticleMapper articleMapper;
 
+    @Resource
+    private MessageService messageService;
+
+    @Resource
+    private CollectMapper collectMapper;
+
     @Override
     public void add(Collect collect) {
-        // 自动填充用户名
-        if (collect.getUserId() != null) {
-            User user = userMapper.selectById(collect.getUserId());
-            if (user != null) {
-                collect.setUserName(user.getName());
-            }
-        }
+        QueryWrapper<Collect> queryWrapper = new QueryWrapper<>();
+        queryWrapper.eq("user_id", collect.getUserId());
 
-        // 自动填充帖子标题
         if (collect.getArticleId() != null) {
-            Article article = articleMapper.selectById(collect.getArticleId());
-            if (article != null) {
-                collect.setArticleTitle(article.getTitle());
-            }
+            queryWrapper.eq("article_id", collect.getArticleId());
+        } else if (collect.getVideoId() != null) {
+            queryWrapper.eq("video_id", collect.getVideoId());
+        } else if (collect.getPublicityId() != null) {
+            queryWrapper.eq("publicity_id", collect.getPublicityId());
+        } else if (collect.getActivityId() != null) {
+            queryWrapper.eq("activity_id", collect.getActivityId());
         }
 
-        // 设置收藏时间
-        collect.setTime(LocalDateTime.now());
-
-        // 判断是否已收藏
-        LambdaQueryWrapper<Collect> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Collect::getUserId, collect.getUserId())
-                .eq(Collect::getArticleId, collect.getArticleId());
-        List<Collect> existingCollects = this.list(queryWrapper);
-
-        if (existingCollects == null || existingCollects.isEmpty()) {
-            this.save(collect);
+        Collect existingCollect = collectMapper.selectOne(queryWrapper);
+        // 如果已存在则删除（取消收藏），否则新增（收藏）
+        if (existingCollect != null) {
+            collectMapper.deleteById(existingCollect.getId());
         } else {
-            this.removeById(existingCollects.get(0).getId());
+            collect.setTime(LocalDateTime.now());
+            collectMapper.insert(collect);
+
+            // 帖子收藏消息通知
+            if (collect.getArticleId() != null && collect.getUserId() != null) {
+                Article article = articleMapper.selectById(collect.getArticleId());
+                User user = userMapper.selectById(collect.getUserId());
+
+                // 只有当帖子作者不是收藏者本人时才发送通知
+                if (article != null && article.getUserId() != null && !article.getUserId().equals(collect.getUserId())) {
+                    Message message = new Message();
+                    message.setUserId(article.getUserId()); // 接收者：帖子作者
+                    message.setFromUserId(collect.getUserId()); // 发送者：收藏者
+                    message.setFromUserName(user != null ? user.getName() : "未知用户");
+                    message.setArticleId(collect.getArticleId()); // 关联帖子ID
+                    message.setArticleTitle(article.getTitle()); // 关联帖子标题
+                    message.setType("collect"); // 消息类型：收藏
+                    message.setContent((user != null ? user.getName() : "未知用户") + " 收藏了你的帖子《" + article.getTitle() + "》"); // 消息内容
+                    message.setIsRead(0); // 未读状态
+                    message.setCreatedTime(LocalDateTime.now()); // 创建时间
+                    messageService.add(message); // 保存消息
+                }
+            }
         }
     }
 
@@ -66,15 +87,45 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
 
     @Override
     public List<Collect> selectAll(Collect collect) {
-        LambdaQueryWrapper<Collect> queryWrapper = buildQueryWrapper(collect);
-        return this.list(queryWrapper);
+        QueryWrapper<Collect> queryWrapper = new QueryWrapper<>();
+        if (collect.getUserId() != null) {
+            queryWrapper.eq("user_id", collect.getUserId());
+        }
+        if (collect.getArticleId() != null) {
+            queryWrapper.eq("article_id", collect.getArticleId());
+        }
+        if (collect.getVideoId() != null) {
+            queryWrapper.eq("video_id", collect.getVideoId());
+        }
+        if (collect.getPublicityId() != null) {
+            queryWrapper.eq("publicity_id", collect.getPublicityId());
+        }
+        if (collect.getActivityId() != null) {
+            queryWrapper.eq("activity_id", collect.getActivityId());
+        }
+        return collectMapper.selectList(queryWrapper);
     }
 
     @Override
     public Page<Collect> selectPage(Collect collect, Integer pageNum, Integer pageSize) {
-        Page<Collect> page = new Page<>(pageNum, pageSize);
-        LambdaQueryWrapper<Collect> queryWrapper = buildQueryWrapper(collect);
-        return this.page(page, queryWrapper);
+        QueryWrapper<Collect> queryWrapper = new QueryWrapper<>();
+        if (collect.getUserName() != null && !collect.getUserName().isEmpty()) {
+            queryWrapper.like("user_name", collect.getUserName());
+        }
+        if (collect.getArticleTitle() != null && !collect.getArticleTitle().isEmpty()) {
+            queryWrapper.like("article_title", collect.getArticleTitle());
+        }
+        if (collect.getVideoTitle() != null && !collect.getVideoTitle().isEmpty()) {
+            queryWrapper.like("video_title", collect.getVideoTitle());
+        }
+        if (collect.getPublicityTitle() != null && !collect.getPublicityTitle().isEmpty()) {
+            queryWrapper.like("publicity_title", collect.getPublicityTitle());
+        }
+        if (collect.getActivityTitle() != null && !collect.getActivityTitle().isEmpty()) {
+            queryWrapper.like("activity_title", collect.getActivityTitle());
+        }
+        queryWrapper.orderByDesc("time");
+        return collectMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
     }
 
     private LambdaQueryWrapper<Collect> buildQueryWrapper(Collect collect) {
@@ -97,4 +148,3 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
         return queryWrapper;
     }
 }
-

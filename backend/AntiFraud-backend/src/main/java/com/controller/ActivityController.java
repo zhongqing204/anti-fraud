@@ -93,4 +93,10 @@ public class ActivityController {
         Page<Activity> page = activityService.selectPage(activity, pageNum, pageSize);
         return Result.success(page);
     }
+
+    @GetMapping("/selectTop4")
+    public Result selectTop4() {
+        List<Activity> list = activityService.selectTop4();
+        return Result.success(list);
+    }
 }

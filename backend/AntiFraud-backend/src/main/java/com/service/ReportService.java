@@ -15,4 +15,7 @@ public interface ReportService extends IService<Report> {
 
     Page<Report> selectPage(Report report, Integer pageNum, Integer pageSize);
 
+    boolean checkDuplicate(Integer userId, String content);
+
+    void batchUpdateStatus(List<Integer> ids, String status, String reason);
 }

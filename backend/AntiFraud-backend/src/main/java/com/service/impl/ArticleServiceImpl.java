@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,7 +38,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     @Override
     public void add(Article article) {
         article.setTime(LocalDateTime.now());
-        article.setStatus("审核通过");
         if (article.getUserId() != null) {
             User user = userMapper.selectById(article.getUserId());
             if (user != null) {
@@ -63,9 +63,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             if (article.getUserId() != null){
                 queryWrapper.eq(Article::getUserId,article.getUserId());
             }
-            if (StringUtils.hasText(article.getStatus())){
-                queryWrapper.eq(Article::getStatus,article.getStatus());
-            }
             queryWrapper.orderByDesc(Article::getTime);
         }
         List<Article> list = this.list(queryWrapper);
@@ -88,10 +85,6 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
 
         if (userId != null){
             queryWrapper.eq(Article::getUserId,userId);
-        }
-
-        if (StringUtils.hasText(status)){
-            queryWrapper.eq(Article::getStatus,status);
         }
 
         queryWrapper.orderByDesc(Article::getTime);
@@ -189,5 +182,19 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 article.setCommentCount(comments != null ? comments.size() : 0);
             }
         });
+    }
+
+    @Override
+    public List<Article> selectTop2() {
+        // 查询所有已审核通过的帖子
+        LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Article::getStatus, "审核通过");
+        List<Article> approvedArticles = this.list(queryWrapper);
+
+        // 随机打乱列表
+        Collections.shuffle(approvedArticles);
+
+        // 返回前2条，如果不足2条则返回全部
+        return approvedArticles.subList(0, Math.min(2, approvedArticles.size()));
     }
 }
