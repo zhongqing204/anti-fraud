@@ -354,3 +354,240 @@ const handleExceed = () => {
   ElMessage.warning('最多只能上传9张图片')
 }
 </script>
+
+<style scoped>
+/* 全局样式 */
+.report-page {
+  background: 
+    url('https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=1920&q=80') center/cover,
+    linear-gradient(135deg, rgba(239, 83, 80, 0.15) 0%, rgba(255, 112, 67, 0.15) 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 1px;
+}
+
+.report-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 20% 30%, rgba(239, 83, 80, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(255, 112, 67, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 195, 18, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.content-wrapper {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #303133;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.title-icon {
+  font-size: 32px;
+}
+
+/* 卡片样式 */
+.info-card {
+  padding: 25px;
+  margin-bottom: 25px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.notice-card {
+  background: 
+    linear-gradient(135deg, rgba(239, 83, 80, 0.95) 0%, rgba(255, 112, 67, 0.95) 100%),
+    url('https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80') center/cover;
+  color: white;
+  backdrop-filter: blur(10px);
+}
+
+.form-card {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 245, 240, 0.98) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.process-card {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 255, 250, 0.98) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.type-card {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(250, 250, 255, 0.98) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.emergency-card {
+  background: #fef0f0;
+  border-left: 4px solid #f56c6c;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-content {
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+/* 举报指南 */
+.notice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.notice-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+/* 表单区域 */
+.form-section {
+  padding: 30px;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 25px;
+  color: #303133;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.upload-area {
+  border: 2px dashed #dcdfe6;
+  border-radius: 12px;
+  padding: 30px;
+  text-align: center;
+  background: #fafafa;
+  transition: all 0.3s ease;
+}
+
+.upload-area:hover {
+  border-color: #667eea;
+  background: #f5f7ff;
+}
+
+.upload-hint {
+  margin-top: 10px;
+  color: #909399;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.submit-btn {
+  width: 100%;
+  border-radius: 25px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* 处理流程 */
+.process-steps {
+  margin-top: 20px;
+}
+
+.process-hint {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f4f4f5;
+  border-radius: 8px;
+  color: #606266;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 诈骗类型说明 */
+.collapse-section :deep(.el-collapse-item__header) {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.collapse-content {
+  line-height: 1.8;
+  color: #606266;
+}
+
+/* 紧急提示 */
+.emergency-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+}
+
+.emergency-icon {
+  margin-top: 2px;
+}
+
+.emergency-text {
+  flex: 1;
+}
+
+.emergency-title {
+  font-weight: bold;
+  color: #f56c6c;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.emergency-desc {
+  color: #606266;
+  line-height: 1.8;
+  font-size: 14px;
+}
+
+.highlight-number {
+  color: #f56c6c;
+  font-size: 18px;
+  font-weight: bold;
+}
+</style>

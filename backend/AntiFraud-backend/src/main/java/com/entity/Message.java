@@ -18,6 +18,12 @@ public class Message {
     private String fromUserName;
     private Integer articleId;
     private String articleTitle;
+    private Integer publicityId;
+    private String publicityTitle;
+    private Integer videoId;
+    private String videoTitle;
+    private Integer activityId;
+    private String activityTitle;
     private String type;
     private String content;
     private Integer isRead;

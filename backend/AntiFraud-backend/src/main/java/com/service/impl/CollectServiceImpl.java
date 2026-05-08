@@ -125,7 +125,25 @@ public class CollectServiceImpl extends ServiceImpl<CollectMapper, Collect> impl
             queryWrapper.like("activity_title", collect.getActivityTitle());
         }
         queryWrapper.orderByDesc("time");
-        return collectMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
+        Page<Collect> page = collectMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
+        
+        // 填充帖子标题和用户名称
+        for (Collect c : page.getRecords()) {
+            if (c.getArticleId() != null) {
+                Article article = articleMapper.selectById(c.getArticleId());
+                if (article != null) {
+                    c.setArticleTitle(article.getTitle());
+                }
+            }
+            if (c.getUserId() != null) {
+                User user = userMapper.selectById(c.getUserId());
+                if (user != null) {
+                    c.setUserName(user.getName());
+                }
+            }
+        }
+        
+        return page;
     }
 
     private LambdaQueryWrapper<Collect> buildQueryWrapper(Collect collect) {

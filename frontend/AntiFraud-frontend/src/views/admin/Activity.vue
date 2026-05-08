@@ -1,4 +1,3 @@
-D:\anti-fraud\frontend\AntiFraud-frontend\src\views\admin\Activity.vue
 <template>
   <div>
     <!-- ===== 搜索和新增区域 ===== -->
@@ -75,7 +74,7 @@ D:\anti-fraud\frontend\AntiFraud-frontend\src\views\admin\Activity.vue
     </div>
 
     <!-- ===== 新增/编辑活动表单对话框 ===== -->
-    <el-dialog :title="data.form.id ? '编辑活动' : '新增活动'" v-model="data.formVisible" width="90%" destroy-on-close>
+    <el-dialog :title="data.form.id ? '编辑活动' : '新增活动'" v-model="data.formVisible" width="90%" destroy-on-close draggable>
       <el-form ref="formRef" :model="data.form" :rules="data.rules" label-width="100px" style="padding: 20px">
         <el-form-item prop="title" label="活动标题">
           <el-input v-model="data.form.title" placeholder="请输入活动标题"></el-input>

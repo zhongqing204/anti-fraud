@@ -131,7 +131,7 @@
     </div>
 
     <!-- 【新增】报名表单对话框 -->
-    <el-dialog title="活动报名" v-model="data.signupVisible" width="600px" destroy-on-close>
+    <el-dialog title="活动报名" v-model="data.signupVisible" width="600px" destroy-on-close draggable>
       <el-form :model="data.signupForm" label-width="120px" style="padding: 20px">
         <el-form-item label="真实姓名" required>
           <el-input v-model="data.signupForm.realName" placeholder="请输入真实姓名" />
@@ -170,16 +170,16 @@
     </el-dialog>
 
     <!-- 【新增】取消报名对话框 -->
-    <el-dialog title="取消报名" v-model="data.cancelVisible" width="500px" destroy-on-close>
+    <el-dialog title="取消报名" v-model="data.cancelVisible" width="500px" destroy-on-close draggable>
       <div style="padding: 20px">
         <div style="margin-bottom: 20px; color: #666">
-          请说明取消报名的原因：
+          请说明取消报名的原因（可选）：
         </div>
         <el-input 
           v-model="data.cancelReason" 
           type="textarea" 
           :rows="4" 
-          placeholder="请输入取消原因"
+          placeholder="请输入取消原因（选填）"
           maxlength="200"
           show-word-limit
         />
@@ -193,11 +193,14 @@
 </template>
 
 <script setup>
-import {reactive, ref, onMounted} from "vue";
+import {reactive, ref, onMounted, inject} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage} from "element-plus";
 import router from "@/router/index.js";
 import {signUpAdd, getActivityDetail} from "@/api/activity.js";
+
+// 【新增】注入全局消息状态
+const messageState = inject('messageState')
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const commentInputRef = ref(null)
@@ -371,11 +374,6 @@ const showCancelDialog = () => {
 
 // 【新增】提交取消报名
 const submitCancel = () => {
-  if (!data.cancelReason || !data.cancelReason.trim()) {
-    ElMessage.warning('请输入取消原因')
-    return
-  }
-
   data.cancelSubmitting = true
   
   // 先获取报名记录ID
@@ -421,6 +419,8 @@ const toggleLike = () => {
       ElMessage.success('操作成功')
       checkLike()
       loadLikeCount()
+      // 【新增】点赞操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -467,6 +467,8 @@ const toggleCollect = () => {
       ElMessage.success('操作成功')
       checkCollect()
       loadCollectCount()
+      // 【新增】收藏操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -528,6 +530,8 @@ const submitComment = () => {
       ElMessage.success('评论成功')
       data.content = ''
       loadComment()
+      // 【新增】评论操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -545,6 +549,19 @@ const loadComment = () => {
       data.commentData = res.data || []
     } else {
       ElMessage.error(res.msg)
+    }
+  })
+}
+
+// 【新增】刷新未读消息数
+const refreshUnreadCount = () => {
+  if (!data.user.id) return
+  request.get('/message/unreadCount', {
+    params: { userId: data.user.id }
+  }).then(res => {
+    if (res.code === '200') {
+      const count = res.data || 0
+      messageState.updateUnreadCount(count)
     }
   })
 }

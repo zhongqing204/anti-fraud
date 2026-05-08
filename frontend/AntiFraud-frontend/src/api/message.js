@@ -61,3 +61,21 @@ export function deleteMessageBatch(ids) {
         data: ids
     })
 }
+
+// 按类型分页查询消息
+export function getMessageByType(params) {
+    return request({
+        url: '/message/selectByType',
+        method: 'get',
+        params
+    })
+}
+
+// 查询某类型的未读消息数量
+export function getUnreadCountByType(userId, type) {
+    return request({
+        url: '/message/unreadCountByType',
+        method: 'get',
+        params: { userId, type }
+    })
+}

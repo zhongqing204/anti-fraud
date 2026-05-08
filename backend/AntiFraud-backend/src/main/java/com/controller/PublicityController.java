@@ -87,6 +87,7 @@ public class PublicityController {
             publicity.setCategoryId(categoryId);
         }
         Page<Publicity> page = publicityService.selectPage(publicity, pageNum, pageSize);
+        System.out.println("Publicity Page - Total: " + page.getTotal() + ", Records: " + page.getRecords().size());
         return Result.success(page);
     }
 

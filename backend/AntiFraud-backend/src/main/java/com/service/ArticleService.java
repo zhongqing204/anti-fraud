@@ -13,9 +13,9 @@ public interface ArticleService extends IService<Article> {
 
     List<Article> selectAll(Article article);
 
-    Page<Article> selectPage(String userName, String title, Integer userId, String status, Integer pageNum, Integer pageSize);
+    Page<Article> selectPage(String userName, String title, Integer userId, Integer pageNum, Integer pageSize);
 
     Article selectById(Integer id);
 
-    List<Article> selectTop2();
+    List<Article> selectTop10();
 }

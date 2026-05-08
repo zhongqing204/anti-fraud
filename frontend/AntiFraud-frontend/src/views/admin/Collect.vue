@@ -19,7 +19,7 @@
         <el-table-column prop="time" label="收藏时间" width="180" />
         <el-table-column label="操作" width="100" fixed="right">
           <template v-slot="scope">
-            <el-button type="danger" circle :icon="Delete" @click="del(scope.row.id)"></el-button>
+            <el-button type="info" plain @click="del(scope.row.id)">取消</el-button>
           </template>
         </el-table-column>
       </el-table>

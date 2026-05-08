@@ -1,4 +1,3 @@
-D:\anti-fraud\frontend\AntiFraud-frontend\src\views\user\PublicityDetail.vue
 <template>
   <div style="margin: 20px auto; width: 60%">
     <div class="card" style="padding: 50px 80px">
@@ -58,13 +57,14 @@ D:\anti-fraud\frontend\AntiFraud-frontend\src\views\user\PublicityDetail.vue
 </template>
 
 <script setup>
-import {reactive, ref, computed, onMounted} from "vue";
+import {reactive, ref, computed, onMounted, inject} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage} from "element-plus";
 import router from "@/router/index.js";
-import MarkdownIt from 'markdown-it'
 
-const md = new MarkdownIt()
+// 【新增】注入全局消息状态
+const messageState = inject('messageState')
+
 const baseUrl = import.meta.env.VITE_BASE_URL
 // 【新增】评论输入框引用
 const commentInputRef = ref(null)
@@ -85,9 +85,10 @@ const data = reactive({
   showCommentSection: false,
 })
 
+// 【修改】直接返回HTML内容，不再使用markdown-it渲染
 const renderedContent = computed(() => {
   if (!data.newsData.content) return ''
-  return md.render(data.newsData.content)
+  return data.newsData.content
 })
 
 // 【新增】获取头像URL方法
@@ -126,6 +127,8 @@ const toggleLike = () => {
       ElMessage.success('操作成功')
       checkLike()
       loadLikeCount()
+      // 【新增】点赞操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -173,6 +176,8 @@ const toggleCollect = () => {
       ElMessage.success('操作成功')
       checkCollect()
       loadCollectCount()
+      // 【新增】收藏操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -235,6 +240,8 @@ const submit = () => {
       ElMessage.success('评论成功')
       data.content = ''
       loadComment()
+      // 【新增】评论操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -256,6 +263,19 @@ const loadComment = () => {
   })
 }
 
+// 【新增】刷新未读消息数
+const refreshUnreadCount = () => {
+  if (!data.user.id) return
+  request.get('/message/unreadCount', {
+    params: { userId: data.user.id }
+  }).then(res => {
+    if (res.code === '200') {
+      const count = res.data || 0
+      messageState.updateUnreadCount(count)
+    }
+  })
+}
+
 onMounted(() => {
   loadActivity()
   // 【新增】初始化点赞、收藏、评论数据
@@ -268,8 +288,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Vditor 内容重置样式，确保富文本格式正确显示 */
-.vditor-reset {
+/* 富文本内容样式 */
+:deep(.vditor-reset) {
   p {
     margin: 1em 0;
     line-height: 1.8;
@@ -319,6 +339,44 @@ onMounted(() => {
   th {
     background-color: #f6f8fa;
     font-weight: bold;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    margin: 1em 0;
+    font-weight: bold;
+  }
+  
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.3em; }
+  h4 { font-size: 1.1em; }
+  
+  strong {
+    font-weight: bold;
+  }
+  
+  em {
+    font-style: italic;
+  }
+  
+  a {
+    color: #409EFF;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 2em 0;
   }
 }
 </style>

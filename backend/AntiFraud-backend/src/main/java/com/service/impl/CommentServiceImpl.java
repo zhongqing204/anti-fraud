@@ -75,6 +75,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 message.setUserId(comment.getUserId());
                 message.setFromUserId(comment.getUserId());
                 message.setFromUserName(user != null ? user.getName() : "未知用户");
+                message.setVideoId(comment.getVideoId());
+                message.setVideoTitle(video.getTitle());
                 message.setType("comment");
                 message.setContent("你评论了视频《" + video.getTitle() + "》");
                 message.setIsRead(0);
@@ -93,6 +95,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 message.setUserId(comment.getUserId());
                 message.setFromUserId(comment.getUserId());
                 message.setFromUserName(user != null ? user.getName() : "未知用户");
+                message.setPublicityId(comment.getPublicityId());
+                message.setPublicityTitle(publicity.getTitle());
                 message.setType("comment");
                 message.setContent("你评论了宣传《" + publicity.getTitle() + "》");
                 message.setIsRead(0);
@@ -111,6 +115,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 message.setUserId(comment.getUserId());
                 message.setFromUserId(comment.getUserId());
                 message.setFromUserName(user != null ? user.getName() : "未知用户");
+                message.setActivityId(comment.getActivityId());
+                message.setActivityTitle(activity.getTitle());
                 message.setType("comment");
                 message.setContent("你评论了活动《" + activity.getTitle() + "》");
                 message.setIsRead(0);

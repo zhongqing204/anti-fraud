@@ -3,15 +3,9 @@ package com.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.entity.Collect;
-import com.entity.Comment;
-import com.entity.Likes;
-import com.entity.Video;
+import com.entity.*;
 import com.mapper.VideoMapper;
-import com.service.CollectService;
-import com.service.CommentService;
-import com.service.LikesService;
-import com.service.VideoService;
+import com.service.*;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -35,6 +29,9 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
 
     @Resource
     private CommentService commentService;
+
+    @Resource
+    private CategoryService categoryService;
 
     @Override
     public void add(Video video) {
@@ -74,7 +71,19 @@ public class VideoServiceImpl extends ServiceImpl<VideoMapper, Video> implements
             queryWrapper.eq(Video::getCategoryId, video.getCategoryId());
         }
         queryWrapper.orderByDesc(Video::getCreateTime);
-        return videoMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
+        Page<Video> pageData = videoMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
+        
+        // 为每条记录设置分类名称
+        for (Video v : pageData.getRecords()) {
+            if (v.getCategoryId() != null) {
+                Category category = categoryService.getById(v.getCategoryId());
+                if (category != null) {
+                    v.setCategoryName(category.getName());
+                }
+            }
+        }
+        
+        return pageData;
     }
 
     @Override

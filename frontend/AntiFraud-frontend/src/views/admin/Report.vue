@@ -79,7 +79,7 @@
       <el-pagination @current-change="load" background layout="prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
-    <el-dialog title="处理举报" v-model="data.formVisible" width="50%" destroy-on-close>
+    <el-dialog title="处理举报" v-model="data.formVisible" width="50%" destroy-on-close draggable>
       <el-form :model="data.form" label-width="100px" style="padding: 20px">
         <el-form-item label="举报内容">
           <div style="color: #606266; white-space: pre-wrap;">{{ data.form.content }}</div>
@@ -119,7 +119,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog title="批量处理" v-model="data.batchProcessVisible" width="40%" destroy-on-close>
+    <el-dialog title="批量处理" v-model="data.batchProcessVisible" width="40%" destroy-on-close draggable>
       <el-form label-width="100px" style="padding: 20px">
         <el-form-item label="处理状态">
           <el-select v-model="data.batchForm.status" placeholder="请选择状态" style="width: 100%">
@@ -140,7 +140,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="data.previewVisible" width="80%" destroy-on-close class="image-preview-dialog">
+    <el-dialog v-model="data.previewVisible" width="80%" destroy-on-close class="image-preview-dialog" draggable>
       <div class="image-preview-container">
         <div class="preview-nav prev" @click="prevImage">
           <el-icon :size="40"><ArrowLeft /></el-icon>

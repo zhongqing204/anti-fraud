@@ -14,6 +14,7 @@ const router = createRouter({
         { path: 'home', meta: { name: '系统首页' }, component: () => import('../views/admin/Home.vue') },
         { path: 'admin', meta: { name: '管理员信息' }, component: () => import('../views/admin/Admin.vue') },
         { path: 'notice', meta: { name: '系统公告' }, component: () => import('../views/admin/Notice.vue') },
+        { path: 'carousel', meta: { name: '轮播图管理' }, component: () => import('../views/admin/Carousel.vue') },
         { path: 'category', meta: { name: '反诈分类' }, component: () => import('../views/admin/Category.vue') },
         { path: 'publicity', meta: { name: '反诈宣传' }, component: () => import('../views/admin/Publicity.vue') },
         { path: 'publicityLikes', meta: { name: '宣传点赞' }, component: () => import('../views/admin/PublicityLikes.vue') },

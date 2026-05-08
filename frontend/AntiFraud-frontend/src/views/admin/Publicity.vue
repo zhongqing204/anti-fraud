@@ -42,7 +42,7 @@
       <el-pagination @current-change="load" background layout="prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
-    <el-dialog title="宣传信息" v-model="data.formVisible" width="90%" destroy-on-close>
+    <el-dialog title="宣传信息" v-model="data.formVisible" width="90%" destroy-on-close draggable>
       <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="80px" style="padding: 20px">
         <el-form-item prop="title" label="宣传标题">
           <el-input v-model="data.form.title" placeholder="请输入宣传标题"></el-input>
@@ -52,9 +52,11 @@
           <el-upload
               :action="baseUrl + '/file/upload'"
               :on-success="handleCoverUpload"
-              list-type="picture"
+              list-type="picture-card"
+              :file-list="data.fileList"
+              :limit="1"
           >
-            <el-button type="primary">点击上传</el-button>
+            <el-icon><Plus /></el-icon>
           </el-upload>
         </el-form-item>
         
@@ -95,7 +97,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog title="宣传内容" v-model="data.viewVisible" width="50%" destroy-on-close>
+    <el-dialog title="宣传内容" v-model="data.viewVisible" width="50%" destroy-on-close draggable>
       <div style="padding: 10px 20px; line-height: 1.8;" v-html="data.viewContent"></div>
     </el-dialog>
   </div>
@@ -105,6 +107,7 @@
 import {reactive, ref, onBeforeUnmount, shallowRef, markRaw} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
+import {Plus} from "@element-plus/icons-vue";
 import '@wangeditor/editor/dist/css/style.css'
 import { Editor, Toolbar } from '@wangeditor/editor-for-vue'
 
@@ -170,6 +173,7 @@ const data = reactive({
   categoryId: null,
   categoryData: [], 
   ids: [], 
+  fileList: [],
   rules: { 
     title: [
       { required: true, message: '请输入宣传标题', trigger: 'blur' },
@@ -235,12 +239,22 @@ loadCategory()
 const handleAdd = () => {
   data.form = {} 
   data.form.content = ''
+  data.fileList = []
   data.formVisible = true 
 }
 
 const handleEdit = (row) => {
   data.form = JSON.parse(JSON.stringify(row)) 
   data.formVisible = true 
+  // 如果有封面，显示在上传组件中
+  if (row.cover) {
+    data.fileList = [{
+      name: 'cover',
+      url: getCoverUrl(row.cover)
+    }]
+  } else {
+    data.fileList = []
+  }
 }
 
 const add = () => {
@@ -330,6 +344,11 @@ const reset = () => {
 const handleCoverUpload = (res) => {
   if (res.code === '200') {
     data.form.cover = res.data
+    // 更新文件列表显示
+    data.fileList = [{
+      name: 'cover',
+      url: getCoverUrl(res.data)
+    }]
     ElMessage.success('封面上传成功')
   } else {
     ElMessage.error(res.msg || '上传失败')

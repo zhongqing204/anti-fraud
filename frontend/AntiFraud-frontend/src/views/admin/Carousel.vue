@@ -1,11 +1,6 @@
 <template>
   <div>
     <div class="card" style="margin-bottom: 5px">
-      <el-input v-model="data.title" prefix-icon="Search" style="width: 240px; margin-right: 10px" placeholder="请输入公告标题查询"></el-input>
-      <el-button type="info" plain @click="load">查询</el-button>
-      <el-button type="warning" plain style="margin: 0 10px" @click="reset">重置</el-button>
-    </div>
-    <div class="card" style="margin-bottom: 5px">
       <el-button type="primary" plain @click="handleAdd">新增</el-button>
       <el-button type="danger" plain @click="delBatch">批量删除</el-button>
     </div>
@@ -13,10 +8,13 @@
     <div class="card" style="margin-bottom: 5px">
       <el-table stripe :data="data.tableData" @selection-change="handleSelectionChange">
         <el-table-column type="selection" width="55" />
-        <el-table-column prop="title" label="公告标题" align="center" />
-        <el-table-column prop="content" label="公告内容" align="center" />
-        <el-table-column prop="time" label="发布时间" align="center" />
-        <el-table-column label="操作" align="center">
+        <el-table-column prop="image" label="图片">
+          <template v-slot="scope">
+            <el-image style="width: 200px; height: 80px; border-radius: 5px; display: block" v-if="scope.row.image"
+                      :src="baseUrl + scope.row.image" :preview-src-list="[baseUrl + scope.row.image]" preview-teleported></el-image>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="200" fixed="right">
           <template v-slot="scope">
             <el-button type="warning" plain @click="handleEdit(scope.row)">编辑</el-button>
             <el-button type="danger" plain @click="del(scope.row.id)">删除</el-button>
@@ -28,13 +26,16 @@
       <el-pagination @current-change="load" background layout="prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
-    <el-dialog title="公告信息" v-model="data.formVisible" width="40%" destroy-on-close draggable>
-      <el-form ref="form" :model="data.form" label-width="70px" style="padding: 20px">
-        <el-form-item prop="title" label="公告标题">
-          <el-input v-model="data.form.title" placeholder="请输入公告标题"></el-input>
-        </el-form-item>
-        <el-form-item prop="content" label="公告内容">
-          <el-input type="textarea" :rows="4" v-model="data.form.content" placeholder="请输入公告内容"></el-input>
+    <el-dialog title="轮播图信息" v-model="data.formVisible" width="50%" destroy-on-close draggable>
+      <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="80px" style="padding: 20px">
+        <el-form-item prop="image" label="图片">
+          <el-upload
+              :action="baseUrl + '/file/upload'"
+              :on-success="handleImageUpload"
+              list-type="picture"
+          >
+            <el-button type="primary">点击上传</el-button>
+          </el-upload>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -48,12 +49,13 @@
 </template>
 
 <script setup>
-
-import {reactive} from "vue";
+import {reactive, ref} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
 import {Delete, Edit} from "@element-plus/icons-vue";
 
+const formRef = ref()
+const baseUrl = import.meta.env.VITE_BASE_URL
 
 const data = reactive({
   formVisible: false,
@@ -62,46 +64,40 @@ const data = reactive({
   pageNum: 1,
   pageSize: 10,
   total: 0,
-  title: null,
-  ids: []
+  ids: [],
+  rules: {
+    image: [
+      { required: true, message: '请上传轮播图图片', trigger: 'blur' },
+    ],
+  }
 })
 
 const load = () => {
-  const params = {
-    pageNum: data.pageNum,
-    pageSize: data.pageSize,
-  }
-
-  if (data.title && data.title.trim()) {
-    params.title = data.title.trim()
-  }
-  
-  request.get('/notice/selectPage', {
-    params: params
+  request.get('/carousel/selectPage', {
+    params: {
+      pageNum: data.pageNum,
+      pageSize: data.pageSize
+    }
   }).then(res => {
     if (res.code === '200') {
       data.tableData = res.data?.records || []
-      data.total = res.data?.total || 0
-      console.log('表格数据:', data.tableData)
-      console.log('总数:', data.total)
-    } else {
-      ElMessage.error(res.msg || '查询失败')
+      data.total = res.data?.total
     }
-  }).catch(err => {
-    console.error('查询公告失败:', err)
-    ElMessage.error('网络请求失败')
   })
 }
+
 const handleAdd = () => {
   data.form = {}
   data.formVisible = true
 }
+
 const handleEdit = (row) => {
   data.form = JSON.parse(JSON.stringify(row))
   data.formVisible = true
 }
+
 const add = () => {
-  request.post('/notice/add', data.form).then(res => {
+  request.post('/carousel/add', data.form).then(res => {
     if (res.code === '200') {
       ElMessage.success('操作成功')
       data.formVisible = false
@@ -113,7 +109,7 @@ const add = () => {
 }
 
 const update = () => {
-  request.put('/notice/update', data.form).then(res => {
+  request.put('/carousel/update', data.form).then(res => {
     if (res.code === '200') {
       ElMessage.success('操作成功')
       data.formVisible = false
@@ -123,12 +119,16 @@ const update = () => {
 }
 
 const save = () => {
-  data.form.id ? update() : add()
+  formRef.value.validate(valid => {
+    if (valid) {
+      data.form.id ? update() : add()
+    }
+  })
 }
 
 const del = (id) => {
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete('/notice/delete/' + id).then(res => {
+    request.delete('/carousel/delete/' + id).then(res => {
       if (res.code === '200') {
         ElMessage.success("删除成功")
         load()
@@ -147,7 +147,7 @@ const delBatch = () => {
     return
   }
   ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗？', '删除确认', { type: 'warning' }).then(res => {
-    request.delete("/notice/delete/batch", {data: data.ids}).then(res => {
+    request.delete("/carousel/delete/batch", {data: data.ids}).then(res => {
       if (res.code === '200') {
         ElMessage.success('操作成功')
         load()
@@ -159,13 +159,13 @@ const delBatch = () => {
     console.error(err)
   })
 }
+
 const handleSelectionChange = (rows) => {
   data.ids = rows.map(v => v.id)
 }
 
-const reset = () => {
-  data.title = null
-  load()
+const handleImageUpload = (res) => {
+  data.form.image = res.data
 }
 
 load()

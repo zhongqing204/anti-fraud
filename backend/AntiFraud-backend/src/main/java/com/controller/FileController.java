@@ -74,4 +74,52 @@ public class FileController {
         }
         return Result.success(urls);
     }
+
+    /**
+     * 文件下载/访问（支持CORS）
+     */
+    @GetMapping("/download/{fileName}")
+    public void download(@PathVariable String fileName, HttpServletResponse response) {
+        try {
+            // 处理可能包含子目录的文件名（如 videos/123.mp4）
+            String cleanFileName = fileName.replace("%2F", "/").replace("%2f", "/");
+            java.io.File file = new java.io.File(filePath + cleanFileName);
+            
+            log.info("尝试访问文件: {}", file.getAbsolutePath());
+            
+            if (!file.exists()) {
+                log.error("文件不存在: {}", file.getAbsolutePath());
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                return;
+            }
+            
+            // 设置CORS响应头
+            response.setHeader("Access-Control-Allow-Origin", "*");
+            response.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers", "*");
+            response.setHeader("Access-Control-Expose-Headers", "Content-Disposition");
+            
+            // 设置文件MIME类型
+            String mimeType = FileUtil.getMimeType(cleanFileName);
+            if (mimeType != null) {
+                response.setContentType(mimeType);
+            } else {
+                response.setContentType("application/octet-stream");
+            }
+            
+            // 设置Content-Length
+            response.setContentLengthLong(file.length());
+            
+            log.info("成功返回文件: {}, 大小: {} bytes, MIME: {}", cleanFileName, file.length(), mimeType);
+            
+            // 写入文件
+            try (OutputStream os = response.getOutputStream()) {
+                os.write(FileUtil.readBytes(file));
+                os.flush();
+            }
+        } catch (Exception e) {
+            log.error("文件下载失败: " + fileName, e);
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
 }

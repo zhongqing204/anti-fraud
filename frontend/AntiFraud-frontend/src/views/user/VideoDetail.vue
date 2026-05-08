@@ -7,16 +7,10 @@
           :src="getVideoUrl(data.videoData.videoUrl)" 
           :poster="getCoverUrl(data.videoData.cover)"
           style="width: 100%; max-height: 600px; display: block"
-          @click="togglePlay"
+          controls
+          @play="isPlaying = true"
+          @pause="isPlaying = false"
         ></video>
-        <div v-if="!isPlaying" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); cursor: pointer" @click="togglePlay">
-          <el-icon size="80" color="white" style="opacity: 0.8"><VideoPlay /></el-icon>
-        </div>
-        <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 10px">
-          <el-button circle size="small" @click="toggleFullscreen">
-            <el-icon><FullScreen /></el-icon>
-          </el-button>
-        </div>
       </div>
       
       <div style="margin-top: 20px">
@@ -79,7 +73,7 @@
 </template>
 
 <script setup>
-import {reactive, ref, onMounted, onUnmounted} from "vue";
+import {reactive, ref, onMounted, onUnmounted, inject} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage} from "element-plus";
 import router from "@/router/index.js";
@@ -89,6 +83,9 @@ import likeActiveIcon from '@/assets/images/点赞.png';
 import collectIcon from '@/assets/images/收藏.png';
 import collectActiveIcon from '@/assets/images/收藏.png';
 import commentIcon from '@/assets/images/评论.png';
+
+// 【新增】注入全局消息状态
+const messageState = inject('messageState')
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const commentInputRef = ref(null)
@@ -132,16 +129,9 @@ const getVideoUrl = (videoUrl) => {
   return baseUrl + videoUrl
 }
 
-const togglePlay = () => {
-  if (!videoRef.value) return
-  if (isPlaying.value) {
-    videoRef.value.pause()
-  } else {
-    videoRef.value.play()
-  }
-  isPlaying.value = !isPlaying.value
-}
-
+/**
+ * 【修改】全屏功能
+ */
 const toggleFullscreen = () => {
   if (!videoRef.value) return
   if (document.fullscreenElement) {
@@ -161,6 +151,8 @@ const toggleLike = () => {
     if (res.code === '200') {
       checkLike()
       loadLikeCount()
+      // 【新增】点赞操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -204,6 +196,8 @@ const toggleCollect = () => {
     if (res.code === '200') {
       checkCollect()
       loadCollectCount()
+      // 【新增】收藏操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -264,6 +258,8 @@ const submit = () => {
       ElMessage.success('评论成功')
       data.content = ''
       loadComment()
+      // 【新增】评论操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -291,6 +287,35 @@ const incrementViewCount = () => {
   })
 }
 
+// 【新增】刷新未读消息数
+const refreshUnreadCount = () => {
+  if (!data.user.id) return
+  request.get('/message/unreadCount', {
+    params: { userId: data.user.id }
+  }).then(res => {
+    if (res.code === '200') {
+      const count = res.data || 0
+      messageState.updateUnreadCount(count)
+    }
+  })
+}
+
+/**
+ * 【新增】尝试自动播放视频
+ */
+const tryAutoPlay = () => {
+  if (videoRef.value) {
+    videoRef.value.play().then(() => {
+      isPlaying.value = true
+      ElMessage.success('视频开始播放')
+    }).catch(() => {
+      // 浏览器阻止自动播放，显示播放按钮
+      isPlaying.value = false
+      ElMessage.info('点击视频开始播放')
+    })
+  }
+}
+
 onMounted(() => {
   if (data.videoId && data.videoId !== 'undefined') {
     request.get('/video/selectById/' + data.videoId).then(res => {
@@ -302,6 +327,11 @@ onMounted(() => {
         checkCollect()
         loadCollectCount()
         loadComment()
+        
+        // 【新增】数据加载完成后尝试自动播放
+        setTimeout(() => {
+          tryAutoPlay()
+        }, 500)
       } else {
         ElMessage.error(res.msg)
       }

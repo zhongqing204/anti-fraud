@@ -66,13 +66,12 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             queryWrapper.orderByDesc(Article::getTime);
         }
         List<Article> list = this.list(queryWrapper);
-        setUserInfo(list);
+        setUserInfo(list, null);
         return list;
     }
 
     @Override
-    public Page<Article> selectPage(String userName, String title, Integer userId, String status, Integer pageNum, Integer pageSize) {
-        Page<Article> page = new Page<>(pageNum,pageSize);
+    public Page<Article> selectPage(String userName, String title, Integer currentUserId, Integer pageNum, Integer pageSize) {
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
 
         if (StringUtils.hasText(userName)){
@@ -83,14 +82,10 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
             queryWrapper.like(Article::getTitle,title);
         }
 
-        if (userId != null){
-            queryWrapper.eq(Article::getUserId,userId);
-        }
-
         queryWrapper.orderByDesc(Article::getTime);
 
-        Page<Article> result = this.page(page,queryWrapper);
-        setUserInfo(result.getRecords());
+        Page<Article> result = this.baseMapper.selectPage(new Page<>(pageNum,pageSize),queryWrapper);
+        setUserInfo(result.getRecords(), currentUserId);
         return result;
     }
 
@@ -121,7 +116,7 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
         return article;
     }
 
-    private void setUserInfo(List<Article> list) {
+    private void setUserInfo(List<Article> list, Integer currentUserId) {
         if (list == null || list.isEmpty()) {
             return;
         }
@@ -174,9 +169,22 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
                 List<Likes> likes = likeMap.get(article.getId());
                 article.setLikeCount(likes != null ? likes.size() : 0);
 
+                // 检查当前用户是否已点赞
+                if (currentUserId != null) {
+                    boolean isLiked = likes != null && likes.stream()
+                            .anyMatch(like -> like.getUserId().equals(currentUserId));
+                    article.setLiked(isLiked);
+                }
 
                 List<Collect> collects = collectMap.get(article.getId());
                 article.setCollectCount(collects != null ? collects.size() : 0);
+
+                // 检查当前用户是否已收藏
+                if (currentUserId != null) {
+                    boolean isCollected = collects != null && collects.stream()
+                            .anyMatch(collect -> collect.getUserId().equals(currentUserId));
+                    article.setCollected(isCollected);
+                }
 
                 List<Comment> comments = commentMap.get(article.getId());
                 article.setCommentCount(comments != null ? comments.size() : 0);
@@ -185,16 +193,15 @@ public class ArticleServiceImpl extends ServiceImpl<ArticleMapper, Article> impl
     }
 
     @Override
-    public List<Article> selectTop2() {
-        // 查询所有已审核通过的帖子
+    public List<Article> selectTop10() {
+        // 查询所有帖子
         LambdaQueryWrapper<Article> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Article::getStatus, "审核通过");
-        List<Article> approvedArticles = this.list(queryWrapper);
+        List<Article> allArticles = this.list(queryWrapper);
 
         // 随机打乱列表
-        Collections.shuffle(approvedArticles);
+        Collections.shuffle(allArticles);
 
-        // 返回前2条，如果不足2条则返回全部
-        return approvedArticles.subList(0, Math.min(2, approvedArticles.size()));
+        // 返回前10条，如果不足10条则返回全部
+        return allArticles.subList(0, Math.min(10, allArticles.size()));
     }
 }

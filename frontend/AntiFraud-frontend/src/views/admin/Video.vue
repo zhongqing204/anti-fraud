@@ -45,20 +45,10 @@
       <el-pagination @current-change="load" background layout="prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
-    <el-dialog title="视频信息" v-model="data.formVisible" width="60%" destroy-on-close>
+    <el-dialog title="视频信息" v-model="data.formVisible" width="60%" destroy-on-close draggable>
       <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="100px" style="padding: 20px">
         <el-form-item prop="title" label="视频标题">
           <el-input v-model="data.form.title" placeholder="请输入视频标题"></el-input>
-        </el-form-item>
-        
-        <el-form-item prop="cover" label="视频封面">
-          <el-upload
-              :action="baseUrl + '/file/upload'"
-              :on-success="handleCoverUpload"
-              list-type="picture"
-          >
-            <el-button type="primary">点击上传</el-button>
-          </el-upload>
         </el-form-item>
         
         <el-form-item prop="videoUrl" label="视频文件">
@@ -68,6 +58,50 @@
               accept="video/*"
           >
             <el-button type="primary">点击上传视频</el-button>
+          </el-upload>
+        </el-form-item>
+        
+        <!-- 【新增】封面选择器 - 从视频中截取 -->
+        <el-form-item v-if="data.form.videoUrl" label="选择封面">
+          <div style="width: 100%">
+            <video 
+              ref="coverVideoRef"
+              :src="getCoverVideoUrl(data.form.videoUrl)"
+              crossorigin="anonymous"
+              style="width: 100%; max-height: 300px; border-radius: 5px; cursor: pointer"
+              @loadedmetadata="handleVideoLoaded"
+              @error="handleVideoError"
+              @seeked="handleSeeked"
+              @click="togglePreviewPlay"
+            ></video>
+            <div v-if="!data.videoLoaded" style="text-align: center; color: #999; padding: 20px;">
+              <el-icon :size="40" class="is-loading"><Loading /></el-icon>
+              <div style="margin-top: 10px">视频加载中...</div>
+            </div>
+            <div style="margin-top: 10px; display: flex; gap: 10px; align-items: center">
+              <el-button type="primary" size="small" @click="retryLoadVideo" v-if="!data.videoLoaded">重新加载</el-button>
+              <el-slider 
+                v-model="data.currentTime" 
+                :max="data.videoDuration" 
+                :step="0.1"
+                style="flex: 1"
+                @input="handleSliderChange"
+              />
+              <el-button type="primary" size="small" @click="captureFrame" :disabled="!data.videoLoaded">截取当前帧</el-button>
+            </div>
+            <div style="margin-top: 5px; color: #999; font-size: 12px">拖动进度条选择封面帧，点击"截取当前帧"按钮</div>
+            <canvas ref="canvasRef" style="display: none"></canvas>
+          </div>
+        </el-form-item>
+        
+        <!-- 【保留】手动上传封面选项 -->
+        <el-form-item label="或手动上传封面">
+          <el-upload
+              :action="baseUrl + '/file/upload'"
+              :on-success="handleCoverUpload"
+              list-type="picture"
+          >
+            <el-button type="primary">点击上传</el-button>
           </el-upload>
         </el-form-item>
         
@@ -98,9 +132,10 @@
       </template>
     </el-dialog>
 
-    <el-dialog title="视频播放" v-model="data.playVisible" width="70%" destroy-on-close>
+    <el-dialog title="视频播放" v-model="data.playVisible" width="70%" destroy-on-close draggable>
       <video 
         :src="getVideoUrl(data.playUrl)" 
+        crossorigin="anonymous"
         controls 
         style="width: 100%; max-height: 500px"
       ></video>
@@ -112,12 +147,15 @@
 import {reactive, ref} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
+import {Loading} from "@element-plus/icons-vue";
 
 const formRef = ref()
+const coverVideoRef = ref(null)
+const canvasRef = ref(null)
 const baseUrl = import.meta.env.VITE_BASE_URL
 
 const data = reactive({
-  user: JSON.parse(localStorage.getItem('xm-user') || '{}'), 
+  user: JSON.parse(localStorage.getItem('xm-admin') || '{}'), 
   formVisible: false, 
   form: {}, 
   tableData: [], 
@@ -132,11 +170,11 @@ const data = reactive({
     title: [
       { required: true, message: '请输入视频标题', trigger: 'blur' },
     ],
-    cover: [
-      { required: true, message: '请上传视频封面', trigger: 'blur' },
-    ],
     videoUrl: [
       { required: true, message: '请上传视频文件', trigger: 'blur' },
+    ],
+    cover: [
+      { required: true, message: '请选择或上传视频封面', trigger: 'blur' },
     ],
     categoryId: [
       { required: true, message: '请选择视频分类', trigger: 'blur' },
@@ -144,6 +182,10 @@ const data = reactive({
   },
   playVisible: false,
   playUrl: '',
+  // 【新增】封面选择相关数据
+  currentTime: 0,
+  videoDuration: 0,
+  videoLoaded: false,
 })
 
 const getCoverUrl = (cover) => {
@@ -162,6 +204,16 @@ const getVideoUrl = (videoUrl) => {
   return baseUrl + videoUrl
 }
 
+// 封面选择器使用的视频URL（支持CORS）
+const getCoverVideoUrl = (videoUrl) => {
+  if (!videoUrl) return ''
+  if (videoUrl.startsWith('http://') || videoUrl.startsWith('https://')) {
+    return videoUrl
+  }
+  // 直接使用原始路径，通过后端CORS配置支持跨域
+  return baseUrl + videoUrl
+}
+
 const playVideo = (videoUrl) => {
   data.playUrl = videoUrl
   data.playVisible = true
@@ -169,8 +221,10 @@ const playVideo = (videoUrl) => {
 
 const loadCategory = () => {
   request.get('/category/selectAll').then(res => {
+    console.log('分类接口响应:', res)
     if (res.code === '200') {
       data.categoryData = res.data
+      console.log('分类数据:', data.categoryData)
     } else {
       ElMessage.error(res.msg)
     }
@@ -201,11 +255,13 @@ loadCategory()
 const handleAdd = () => {
   data.form = {} 
   data.formVisible = true 
+  data.videoLoaded = false  // 重置加载状态
 }
 
 const handleEdit = (row) => {
   data.form = JSON.parse(JSON.stringify(row)) 
   data.formVisible = true 
+  data.videoLoaded = false  // 重置加载状态
 }
 
 const add = () => {
@@ -286,6 +342,9 @@ const reset = () => {
   load()
 }
 
+/**
+ * 【修改】封面上传处理
+ */
 const handleCoverUpload = (res) => {
   if (res.code === '200') {
     data.form.cover = res.data
@@ -296,26 +355,30 @@ const handleCoverUpload = (res) => {
 }
 
 /**
- * 修改：视频上传成功后自动获取时长
+ * 【优化】视频上传成功后自动获取时长、提取文件名作为标题、生成第一帧封面
  */
 const handleVideoUpload = (res) => {
   if (res.code === '200') {
     data.form.videoUrl = res.data
     
-    // 创建临时 video 元素获取时长
+    // 【新增】从文件路径提取文件名作为默认标题
+    const fileName = res.data.split('/').pop().replace(/\.[^/.]+$/, '')
+    if (!data.form.title) {
+      data.form.title = fileName
+    }
+    
+    // 创建临时 video 元素获取时长和生成封面
     const video = document.createElement('video')
     video.preload = 'metadata'
-    video.src = getVideoUrl(res.data)
+    video.src = baseUrl + res.data  // 直接使用原始路径获取时长
     
     video.onloadedmetadata = () => {
       const duration = video.duration
       const minutes = Math.floor(duration / 60)
       const seconds = Math.floor(duration % 60)
       data.form.duration = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-      ElMessage.success(`视频上传成功，时长：${data.form.duration}`)
       
-      // 清理临时元素
-      URL.revokeObjectURL(video.src)
+      ElMessage.success(`视频上传成功，时长：${data.form.duration}`)
     }
     
     video.onerror = () => {
@@ -323,6 +386,196 @@ const handleVideoUpload = (res) => {
     }
   } else {
     ElMessage.error(res.msg || '上传失败')
+  }
+}
+
+/**
+ * 【新增】从视频中截取指定时间的帧作为封面
+ */
+const generateCoverFromVideo = (videoElement, time) => {
+  return new Promise((resolve) => {
+    videoElement.currentTime = time
+    videoElement.onseeked = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = videoElement.videoWidth
+      canvas.height = videoElement.videoHeight
+      const ctx = canvas.getContext('2d')
+      ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height)
+      
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const formData = new FormData()
+          formData.append('file', blob, `cover_${Date.now()}.jpg`)
+          
+          // 使用 axios post 方法上传
+          request.post('/file/upload', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }).then(res => {
+            if (res.code === '200') {
+              data.form.cover = res.data
+              resolve(true)
+            } else {
+              resolve(false)
+            }
+          }).catch(() => {
+            resolve(false)
+          })
+        } else {
+          resolve(false)
+        }
+      }, 'image/jpeg', 0.8)
+    }
+  })
+}
+
+/**
+ * 【新增】视频元数据加载完成
+ */
+const handleVideoLoaded = () => {
+  if (coverVideoRef.value) {
+    data.videoDuration = coverVideoRef.value.duration
+    data.currentTime = 0
+    data.videoLoaded = true
+  }
+}
+
+/**
+ * 【新增】视频加载错误处理
+ */
+const handleVideoError = (e) => {
+  console.error('视频加载失败:', e)
+  console.error('视频源:', coverVideoRef.value?.src)
+  data.videoLoaded = false
+  
+  // 获取更详细的错误信息
+  const video = coverVideoRef.value
+  if (video && video.error) {
+    console.error('视频错误代码:', video.error.code)
+    console.error('视频错误信息:', video.error.message)
+    
+    switch(video.error.code) {
+      case 1:
+        ElMessage.error('视频加载被中止')
+        break
+      case 2:
+        ElMessage.error('视频网络错误，请检查网络连接')
+        break
+      case 3:
+        ElMessage.error('视频解码失败，格式可能不支持')
+        break
+      case 4:
+        ElMessage.error('视频格式不支持或文件不存在')
+        break
+      default:
+        ElMessage.error('视频加载失败，请检查文件是否有效')
+    }
+  } else {
+    ElMessage.error('视频加载失败，请检查视频文件')
+  }
+}
+
+/**
+ * 【新增】重新加载视频
+ */
+const retryLoadVideo = () => {
+  data.videoLoaded = false
+  if (coverVideoRef.value && data.form.videoUrl) {
+    // 强制重新加载视频
+    const video = coverVideoRef.value
+    const currentSrc = video.src
+    video.src = ''
+    setTimeout(() => {
+      video.src = currentSrc
+      video.load()
+    }, 100)
+  }
+}
+
+/**
+ * 【新增】滑块拖动时预览对应帧
+ */
+const handleSliderChange = (value) => {
+  if (coverVideoRef.value) {
+    coverVideoRef.value.currentTime = value
+  }
+}
+
+/**
+ * 【新增】视频跳转完成
+ */
+const handleSeeked = () => {
+  // 可以在这里添加预览逻辑
+}
+
+/**
+ * 【新增】切换预览播放/暂停
+ */
+const togglePreviewPlay = () => {
+  if (coverVideoRef.value && data.form.videoUrl) {
+    const video = coverVideoRef.value
+    // 检查视频是否有有效的源
+    if (!video.src || video.src === window.location.href) {
+      ElMessage.warning('视频加载中，请稍候')
+      return
+    }
+    if (video.paused) {
+      video.play().catch(err => {
+        console.error('播放失败:', err)
+        ElMessage.warning('视频加载失败，请重试')
+      })
+    } else {
+      video.pause()
+    }
+  }
+}
+
+/**
+ * 【新增】截取当前帧作为封面
+ */
+const captureFrame = () => {
+  if (!coverVideoRef.value || !canvasRef.value) {
+    ElMessage.warning('请先上传视频')
+    return
+  }
+  
+  const video = coverVideoRef.value
+  const canvas = canvasRef.value
+  const ctx = canvas.getContext('2d')
+  
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  
+  try {
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+    
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const formData = new FormData()
+        formData.append('file', blob, `cover_${Date.now()}.jpg`)
+        
+        // 使用 axios post 方法上传
+        request.post('/file/upload', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }).then(res => {
+          if (res.code === '200') {
+            data.form.cover = res.data
+            ElMessage.success('封面截取成功')
+          } else {
+            ElMessage.error(res.msg || '上传失败')
+          }
+        }).catch(err => {
+          console.error('上传失败:', err)
+          ElMessage.error('封面上传失败')
+        })
+      }
+    }, 'image/jpeg', 0.8)
+  } catch (error) {
+    console.error('Canvas导出失败:', error)
+    ElMessage.warning('由于浏览器安全限制，无法自动截取封面。请使用“手动上传封面”功能上传图片。')
   }
 }
 

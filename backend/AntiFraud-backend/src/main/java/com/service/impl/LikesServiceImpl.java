@@ -125,7 +125,25 @@ public class LikesServiceImpl extends ServiceImpl<LikesMapper, Likes> implements
             queryWrapper.like("activity_title", likes.getActivityTitle());
         }
         queryWrapper.orderByDesc("time");
-        return likesMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
+        Page<Likes> page = likesMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
+        
+        // 填充帖子标题和用户名称
+        for (Likes like : page.getRecords()) {
+            if (like.getArticleId() != null) {
+                Article article = articleMapper.selectById(like.getArticleId());
+                if (article != null) {
+                    like.setArticleTitle(article.getTitle());
+                }
+            }
+            if (like.getUserId() != null) {
+                User user = userMapper.selectById(like.getUserId());
+                if (user != null) {
+                    like.setUserName(user.getName());
+                }
+            }
+        }
+        
+        return page;
     }
 
     private LambdaQueryWrapper<Likes> buildQueryWrapper(Likes likes) {

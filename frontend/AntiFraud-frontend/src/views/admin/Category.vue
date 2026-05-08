@@ -26,7 +26,7 @@
       <el-pagination @current-change="load" background layout="prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
     </div>
 
-    <el-dialog title="分类信息" v-model="data.formVisible" width="40%" destroy-on-close>
+    <el-dialog title="分类信息" v-model="data.formVisible" width="40%" destroy-on-close draggable>
       <el-form ref="formRef" :rules="data.rules" :model="data.form" label-width="80px" style="padding: 20px">
         <el-form-item prop="name" label="分类名称">
           <el-input v-model="data.form.name" placeholder="请输入分类名称"></el-input>

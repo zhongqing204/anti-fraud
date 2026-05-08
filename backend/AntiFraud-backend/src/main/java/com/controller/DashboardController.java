@@ -51,7 +51,7 @@ public class DashboardController {
     @GetMapping("/base")
     public Result base() {
         Map<String, Integer> map = new HashMap<>();
-        List<Article> articles = articleService.selectAll(new Article()).stream().filter(x -> "审核通过".equals(x.getStatus())).collect(Collectors.toList());
+        List<Article> articles = articleService.selectAll(new Article());
         map.put("article", articles.size());
         map.put("publicity", publicityService.selectAll(new Publicity()).size());
         map.put("activity", activityService.selectAll(new Activity()).size());

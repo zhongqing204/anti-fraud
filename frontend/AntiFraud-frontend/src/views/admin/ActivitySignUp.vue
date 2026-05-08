@@ -33,7 +33,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="reason" label="审核说明" show-overflow-tooltip />
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template v-slot="scope">
             <!-- 【修改】通过/拒绝按钮合并为处理按钮 -->
             <el-button 
@@ -41,6 +41,7 @@
               type="primary" 
               size="small" 
               @click="showAuditDialog(scope.row)"
+              plain
             >
               处理
             </el-button>
@@ -48,8 +49,19 @@
               type="primary" 
               size="small" 
               @click="showDetailDialog(scope.row)"
+              plain
             >
               详情
+            </el-button>
+            <!-- 【新增】只有审核通过的才能删除 -->
+            <el-button 
+              v-if="scope.row.status === '审核通过'" 
+              type="danger" 
+              size="small" 
+              @click="handleDelete(scope.row)"
+              plain
+            >
+              删除
             </el-button>
           </template>
         </el-table-column>
@@ -61,7 +73,7 @@
     </div>
 
     <!-- 【修改】审核对话框 - 可选择通过或拒绝 -->
-    <el-dialog title="处理报名" v-model="data.auditVisible" width="500px" destroy-on-close>
+    <el-dialog title="处理报名" v-model="data.auditVisible" width="500px" destroy-on-close draggable>
       <div style="padding: 20px">
         <div style="margin-bottom: 20px">
           <div style="font-weight: bold; margin-bottom: 10px">审核结果：</div>
@@ -89,7 +101,7 @@
     </el-dialog>
 
     <!-- 详情对话框 -->
-    <el-dialog title="报名信息详情" v-model="data.detailVisible" width="600px" destroy-on-close>
+    <el-dialog title="报名信息详情" v-model="data.detailVisible" width="600px" destroy-on-close draggable>
       <div style="padding: 20px">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="用户名">{{ data.currentDetail.userName }}</el-descriptions-item>
@@ -204,6 +216,26 @@ const submitAudit = () => {
 const showDetailDialog = (row) => {
   data.currentDetail = row
   data.detailVisible = true
+}
+
+// 【新增】删除报名记录
+const handleDelete = (row) => {
+  ElMessageBox.confirm('确定要删除这条报名记录吗？', '删除确认', { 
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消'
+  }).then(() => {
+    request.delete('/activitySignUp/delete/' + row.id).then(res => {
+      if (res.code === '200') {
+        ElMessage.success('删除成功')
+        load()
+      } else {
+        ElMessage.error(res.msg)
+      }
+    })
+  }).catch(() => {
+    // 用户取消删除
+  })
 }
 
 load()

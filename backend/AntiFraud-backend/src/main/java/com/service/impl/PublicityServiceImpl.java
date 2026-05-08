@@ -86,7 +86,8 @@ public class PublicityServiceImpl extends ServiceImpl<PublicityMapper, Publicity
             wrapper.eq(Publicity::getCategoryId, publicity.getCategoryId());
         }
         wrapper.orderByDesc(Publicity::getCreateTime);
-        Page<Publicity> pageData = page(page, wrapper);
+        Page<Publicity> pageData = super.page(page, wrapper);
+        System.out.println("PublicityServiceImpl - Total: " + pageData.getTotal() + ", Records: " + pageData.getRecords().size());
         for (Publicity p : pageData.getRecords()){
             if (p.getCategoryId() != null){
                 Category category = categoryService.getById(p.getCategoryId());

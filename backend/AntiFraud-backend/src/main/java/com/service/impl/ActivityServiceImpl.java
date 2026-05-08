@@ -82,7 +82,6 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
 
     @Override
     public Page<Activity> selectPage(Activity activity, Integer pageNum, Integer pageSize) {
-        Page<Activity> page = new Page<>(pageNum, pageSize);
         LambdaQueryWrapper<Activity> queryWrapper = new LambdaQueryWrapper<>();
         if (activity != null){
             if (StringUtils.hasText(activity.getTitle())){
@@ -96,7 +95,7 @@ public class ActivityServiceImpl extends ServiceImpl<ActivityMapper, Activity> i
             }
         }
         queryWrapper.orderByDesc(Activity::getCreateTime);
-        Page<Activity> resultPage = this.page(page, queryWrapper);
+        Page<Activity> resultPage = this.baseMapper.selectPage(new Page<>(pageNum, pageSize), queryWrapper);
         LocalDateTime now = LocalDateTime.now();
         for (Activity item : resultPage.getRecords()){
             if (item.getCategoryId() != null){

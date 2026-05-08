@@ -19,7 +19,6 @@ public class Article {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime time;
     private Integer userId;
-    private String status;
     private String userName;
     private String userAvatar;
 

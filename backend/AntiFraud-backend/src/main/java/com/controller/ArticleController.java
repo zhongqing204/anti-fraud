@@ -56,16 +56,15 @@ public class ArticleController {
     public Result selectPage(@RequestParam(required = false) String userName,
                              @RequestParam(required = false) String title,
                              @RequestParam(required = false) Integer userId,
-                             @RequestParam(required = false) String status,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize) {
-        Page<Article> page = articleService.selectPage(userName, title, userId, status, pageNum, pageSize);
+        Page<Article> page = articleService.selectPage(userName, title, userId, pageNum, pageSize);
         return Result.success(page);
     }
 
-    @GetMapping("/selectTop2")
-    public Result selectTop2() {
-        List<Article> list = articleService.selectTop2();
+    @GetMapping("/selectTop10")
+    public Result selectTop10() {
+        List<Article> list = articleService.selectTop10();
         return Result.success(list);
     }
 }

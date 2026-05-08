@@ -26,8 +26,9 @@
             <div style="display: flex; align-items: center">
               <div style="position: relative; margin-right: 15px; cursor: pointer" @click="router.push('/front/myMessage')">
                 <el-icon :size="24"><Bell /></el-icon>
-                <div v-if="data.unreadCount > 0" style="position: absolute; top: -5px; right: -5px; background: #f56c6c; color: #fff; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 12px">
-                  {{ data.unreadCount > 99 ? '99+' : data.unreadCount }}
+                <!-- 【优化】使用全局状态显示红点 -->
+                <div v-if="messageState.unreadCount > 0" style="position: absolute; top: -5px; right: -5px; background: #f56c6c; color: #fff; border-radius: 50%; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-size: 12px">
+                  {{ messageState.unreadCount > 99 ? '99+' : messageState.unreadCount }}
                 </div>
               </div>
               <img style="width: 40px; height: 40px; border-radius: 50%;" :src="data.user.avatar" alt="">
@@ -46,7 +47,8 @@
                 <el-dropdown-item @click="router.push('/front/myReport')">我的举报</el-dropdown-item>
                 <el-dropdown-item @click="router.push('/front/myMessage')">
                   我的消息
-                  <el-badge v-if="data.unreadCount > 0" :value="data.unreadCount" :max="99" style="margin-left: 10px" />
+                  <!-- 【优化】使用全局状态显示红点 -->
+                  <el-badge v-if="messageState.unreadCount > 0" :value="messageState.unreadCount" :max="99" style="margin-left: 10px" />
                 </el-dropdown-item>
                 <el-dropdown-item @click="logout">退出登录</el-dropdown-item>
               </el-dropdown-menu>
@@ -66,9 +68,12 @@
 
 <script setup>
   import router from "@/router/index.js";
-  import { reactive, onMounted, onUnmounted } from "vue";
+  import { reactive, onMounted, onUnmounted, inject } from "vue";
   import request from "@/utils/request.js";
   import { Bell } from "@element-plus/icons-vue";
+
+  // 【新增】注入全局消息状态
+  const messageState = inject('messageState')
 
   const data = reactive({
     user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
@@ -114,7 +119,10 @@
       params: { userId: data.user.id }
     }).then(res => {
       if (res.code === '200') {
-        data.unreadCount = res.data || 0;
+        const count = res.data || 0;
+        data.unreadCount = count;
+        // 【新增】同步更新全局消息状态
+        messageState.updateUnreadCount(count);
       }
     });
   };
@@ -123,7 +131,8 @@
     loadNotice();
     if (data.user.id) {
       loadUnreadCount();
-      data.unreadTimer = setInterval(loadUnreadCount, 30000);
+      // 【优化】缩短轮询间隔为10秒，提高实时性
+      data.unreadTimer = setInterval(loadUnreadCount, 10000);
     }
   });
 
@@ -135,7 +144,8 @@
   loadNotice();
   if (data.user.id) {
     loadUnreadCount();
-    data.unreadTimer = setInterval(loadUnreadCount, 30000);
+    // 【优化】缩短轮询间隔为10秒，提高实时性
+    data.unreadTimer = setInterval(loadUnreadCount, 10000);
   }
 </script>
 

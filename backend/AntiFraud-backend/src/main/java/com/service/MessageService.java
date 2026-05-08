@@ -20,4 +20,8 @@ public interface MessageService extends IService<Message> {
     void markAsRead(List<Integer> ids);
 
     void markAllAsRead(Integer userId);
+
+    Page<Message> selectByType(Message message, Integer pageNum, Integer pageSize);
+
+    Integer getUnreadCountByType(Integer userId, String type);
 }

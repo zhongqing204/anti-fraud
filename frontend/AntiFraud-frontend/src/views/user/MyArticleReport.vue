@@ -1,78 +1,129 @@
 <template>
-  <div style="background: #f5f7fa; min-height: 100vh; padding-bottom: 50px">
-    <div style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); padding: 30px 0; margin-bottom: 30px">
-      <div style="width: 60%; margin: 0 auto">
-        <div style="color: white; font-size: 32px; font-weight: bold; margin-bottom: 10px"> 
-          <el-icon style="vertical-align: middle; margin-right: 10px"><Warning /></el-icon>
-          我的帖子举报
-        </div>
-        <div style="color: rgba(255,255,255,0.9); font-size: 16px">查看您举报的论坛帖子处理进度</div>
-      </div>
+  <div class="my-report-page">
+    <!-- 页面标题 -->
+    <div class="page-title">
+      <el-icon class="title-icon"><Warning /></el-icon>
+      我的举报记录
     </div>
 
-    <div style="width: 60%; margin: 0 auto">
-      <div v-for="item in data.tableData" :key="item.id" style="margin-bottom: 15px; background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s" @mouseenter="$event.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" @mouseleave="$event.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'">
-        <div style="display: flex; align-items: flex-start; gap: 15px">
-          <div style="width: 50px; height: 50px; background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
-            <el-icon size="24" color="white">
-              <Warning />
-            </el-icon>
+    <!-- 举报列表 -->
+    <div class="report-list">
+      <div 
+        v-for="item in data.tableData" 
+        :key="item.id" 
+        class="report-card"
+      >
+        <!-- 卡片头部 -->
+        <div class="card-header">
+          <div class="report-icon">
+            <el-icon :size="24"><WarningFilled /></el-icon>
           </div>
-          <div style="flex: 1">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px">
-              <div style="font-size: 16px; font-weight: bold; color: #333">{{ item.articleTitle || '未知帖子' }}</div>
-              <el-tag v-if="item.status === '已处理'" type="success" size="large">{{ item.status }}</el-tag>
-              <el-tag v-else-if="item.status === '处理中'" type="warning" size="large">{{ item.status }}</el-tag>
-              <el-tag v-else type="danger" size="large">{{ item.status }}</el-tag>
-            </div>
-            <div style="margin-bottom: 8px">
-              <span style="color: #999; font-size: 13px">举报类型：</span>
-              <el-tag size="small" type="info">{{ item.reportType }}</el-tag>
-            </div>
-            <div style="color: #666; font-size: 14px; line-height: 1.8; margin-bottom: 10px">
-              <span style="color: #999">详细原因：</span>{{ item.detailReason }}
-            </div>
-            <div style="color: #999; font-size: 12px; margin-bottom: 10px">
-              举报时间：{{ formatTime(item.time) }}
-            </div>
-            <div v-if="item.reason" style="background: #f4f4f5; padding: 10px; border-radius: 5px; margin-bottom: 10px">
-              <div style="color: #606266; font-size: 13px">
-                <span style="color: #909399">处理说明：</span>{{ item.reason }}
-              </div>
-            </div>
+          <div class="report-title">{{ item.title || '举报内容' }}</div>
+          <el-tag 
+            v-if="item.status === '已处理'" 
+            type="success" 
+            class="status-tag"
+          >
+            {{ item.status }}
+          </el-tag>
+          <el-tag 
+            v-else-if="item.status === '处理中'" 
+            type="warning" 
+            class="status-tag"
+          >
+            {{ item.status }}
+          </el-tag>
+          <el-tag 
+            v-else 
+            type="danger" 
+            class="status-tag"
+          >
+            {{ item.status }}
+          </el-tag>
+        </div>
+
+        <!-- 卡片内容 -->
+        <div class="card-body">
+          <div class="info-row">
+            <span class="info-label">举报类型：</span>
+            <el-tag type="info" size="small">{{ item.category || '未分类' }}</el-tag>
+          </div>
+          
+          <div class="info-row">
+            <span class="info-label">详细原因：</span>
+            <span class="info-value">{{ item.content || '-' }}</span>
+          </div>
+          
+          <div class="info-row">
+            <span class="info-label">举报时间：</span>
+            <span class="info-value">{{ item.time }}</span>
+          </div>
+
+          <div v-if="item.reason" class="info-row">
+            <span class="info-label">处理说明：</span>
+            <span class="info-value">{{ item.reason }}</span>
+          </div>
+
+          <div v-if="item.files" class="info-row">
+            <span class="info-label">附件：</span>
+            <el-button 
+              link 
+              type="primary" 
+              size="small"
+              @click="downloadFile(item.files)"
+            >
+              <el-icon><Link /></el-icon>
+              查看附件
+            </el-button>
           </div>
         </div>
-        <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px">
-          <el-button type="primary" size="small" @click="goToArticle(item.articleId)" v-if="item.articleId">查看帖子</el-button>
-          <el-button type="info" size="small" @click="viewDetail(item)">查看详情</el-button>
-          <el-button type="danger" size="small" @click="del(item.id)">删除</el-button>
+
+        <!-- 卡片底部操作按钮 -->
+        <div class="card-footer">
+          <el-button 
+            type="primary" 
+            size="default"
+            @click="viewDetail(item)"
+          >
+            查看详情
+          </el-button>
+          <el-button 
+            type="danger" 
+            size="default"
+            @click="del(item.id)"
+          >
+            删除
+          </el-button>
         </div>
       </div>
 
-      <div v-if="data.total" style="margin-top: 30px; background: white; padding: 20px; border-radius: 10px; text-align: center">
-        <el-pagination @current-change="load" layout="total, prev, pager, next, jumper" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
-      </div>
-      <div v-else style="text-align: center; padding: 80px; color: #999; background: white; border-radius: 10px">
-        <el-icon :size="48" style="margin-bottom: 20px"><CircleCheck /></el-icon>
-        <div style="font-size: 18px">暂无举报记录</div>
-        <div style="font-size: 14px; margin-top: 10px; color: #ccc">您举报的帖子处理结果会在这里显示</div>
-      </div>
+      <!-- 空状态 -->
+      <el-empty v-if="data.tableData.length === 0 && !data.loading" description="暂无举报记录" />
     </div>
 
-    <el-dialog title="举报详情" v-model="data.detailVisible" width="600px" destroy-on-close>
-      <div style="padding: 20px">
+    <!-- 分页 -->
+    <div class="pagination-wrapper" v-if="data.total">
+      <el-pagination 
+        @current-change="load" 
+        layout="total, prev, pager, next, jumper" 
+        :page-size="data.pageSize" 
+        v-model:current-page="data.pageNum" 
+        :total="data.total" 
+      />
+    </div>
+
+    <!-- 举报详情对话框 -->
+    <el-dialog title="举报详情" v-model="data.detailVisible" width="50%" destroy-on-close draggable>
+      <div style="padding: 20px;">
         <el-descriptions :column="1" border>
-          <el-descriptions-item label="举报帖子">
-            {{ data.currentReport.articleTitle || '未知' }}
-          </el-descriptions-item>
           <el-descriptions-item label="举报类型">
-            <el-tag type="info">{{ data.currentReport.reportType }}</el-tag>
+            {{ data.currentReport.category || '未分类' }}
           </el-descriptions-item>
-          <el-descriptions-item label="详细原因">
-            {{ data.currentReport.detailReason }}
+          <el-descriptions-item label="举报内容">
+            <div style="white-space: pre-wrap;">{{ data.currentReport.content }}</div>
           </el-descriptions-item>
           <el-descriptions-item label="举报时间">
-            {{ formatTime(data.currentReport.time) }}
+            {{ data.currentReport.time }}
           </el-descriptions-item>
           <el-descriptions-item label="处理状态">
             <el-tag v-if="data.currentReport.status === '已处理'" type="success">{{ data.currentReport.status }}</el-tag>
@@ -82,90 +133,56 @@
           <el-descriptions-item label="处理说明" v-if="data.currentReport.reason">
             {{ data.currentReport.reason }}
           </el-descriptions-item>
-          <el-descriptions-item label="附件" v-if="data.currentReport.files">
-            <div v-for="(file, index) in data.currentReport.files.split(',')" :key="index" style="margin-bottom: 5px">
-              <el-button link type="primary" @click="downloadFile(file)">
-                <el-icon><Link /></el-icon>
-                查看附件 {{ index + 1 }}
-              </el-button>
-            </div>
-          </el-descriptions-item>
         </el-descriptions>
-        <div style="margin-top: 20px; text-align: center">
-          <el-button type="primary" @click="data.detailVisible = false">关闭</el-button>
-        </div>
       </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import {reactive, onMounted} from "vue";
+import {reactive, ref} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage, ElMessageBox} from "element-plus";
-import router from "@/router/index.js";
-import {Warning, CircleCheck, Link} from '@element-plus/icons-vue'
+import {Link, Warning, WarningFilled} from "@element-plus/icons-vue";
 
 const baseUrl = import.meta.env.VITE_BASE_URL
+const loading = ref(false)
 
 const data = reactive({
-  user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
+  tableData: [],
   pageNum: 1,
   pageSize: 10,
-  tableData: [],
   total: 0,
   detailVisible: false,
-  currentReport: {}
+  currentReport: {},
+  loading: false
 })
 
-const formatTime = (time) => {
-  if (!time) return ''
-  return time.replace('T', ' ').substring(0, 19)
-}
-
-const goToArticle = (articleId) => {
-  if (articleId) {
-    router.push('/front/articleDetail?id=' + articleId)
-  } else {
-    ElMessage.warning('帖子不存在或已被删除')
-  }
-}
-
-const viewDetail = (row) => {
-  data.currentReport = JSON.parse(JSON.stringify(row))
-  data.detailVisible = true
-}
-
-const downloadFile = (fileUrl) => {
-  if (fileUrl) {
-    window.open(baseUrl + fileUrl)
-  }
-}
-
 const load = () => {
-  console.log('当前用户ID:', data.user.id)
-  request.get('/articleReport/selectPage', {
+  data.loading = true
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  request.get('/report/selectPage', {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
-      userId: data.user.id
+      userId: user.id
     }
   }).then(res => {
-    console.log('接口返回数据:', res)
     if (res.code === '200') {
       data.tableData = res.data?.records || []
       data.total = res.data?.total || 0
-      console.log('设置后的total:', data.total)
     } else {
       ElMessage.error(res.msg)
     }
+  }).finally(() => {
+    data.loading = false
   })
 }
-
+load()
 
 const del = (id) => {
-  ElMessageBox.confirm('确定要删除这条举报记录吗？', '删除确认', { type: 'warning' }).then(() => {
-    request.delete('/articleReport/delete/' + id).then(res => {
+  ElMessageBox.confirm('确定要删除这条举报记录吗？', '删除确认', { type: 'warning' }).then(res => {
+    request.delete('/report/delete/' + id).then(res => {
       if (res.code === '200') {
         ElMessage.success('删除成功')
         load()
@@ -173,15 +190,158 @@ const del = (id) => {
         ElMessage.error(res.msg)
       }
     })
-  }).catch(() => {})
+  }).catch(err => {
+    console.error(err)
+  })
 }
 
-onMounted(() => {
-  if (data.user.id) {
-    load()
-  } else {
-    ElMessage.warning('请先登录')
-    router.push('/login')
+const downloadFile = (filesStr) => {
+  if (!filesStr) return
+  const files = filesStr.split(',').filter(url => url.trim())
+  if (files.length > 0) {
+    window.open(baseUrl + files[0])
   }
-})
+}
+
+const viewDetail = (row) => {
+  data.currentReport = JSON.parse(JSON.stringify(row))
+  data.detailVisible = true
+}
 </script>
+
+<style scoped>
+.my-report-page {
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 0 20px;
+}
+
+/* 页面标题 */
+.page-title {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 30px;
+  color: #303133;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-icon {
+  font-size: 32px;
+  color: #f56c6c;
+}
+
+/* 举报列表 */
+.report-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+/* 举报卡片 */
+.report-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border-radius: 16px;
+  padding: 25px;
+  box-shadow: 
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.report-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+}
+
+.report-card:hover {
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.12),
+    0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+/* 卡片头部 */
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.report-icon {
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #f56c6c 0%, #e74c3c 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.report-title {
+  flex: 1;
+  font-size: 18px;
+  font-weight: bold;
+  color: #303133;
+}
+
+.status-tag {
+  flex-shrink: 0;
+}
+
+/* 卡片内容 */
+.card-body {
+  margin-bottom: 20px;
+}
+
+.info-row {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 12px;
+  line-height: 1.8;
+}
+
+.info-label {
+  color: #909399;
+  font-size: 14px;
+  min-width: 100px;
+  flex-shrink: 0;
+}
+
+.info-value {
+  color: #606266;
+  font-size: 14px;
+  flex: 1;
+  word-break: break-all;
+}
+
+/* 卡片底部 */
+.card-footer {
+  display: flex;
+  gap: 12px;
+  padding-top: 15px;
+  border-top: 1px solid #e4e7ed;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 20px 0;
+}
+</style>

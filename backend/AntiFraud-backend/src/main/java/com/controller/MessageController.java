@@ -81,4 +81,18 @@ public class MessageController {
         messageService.markAllAsRead(userId);
         return Result.success();
     }
+
+    @GetMapping("/selectByType")
+    public Result selectByType(Message message,
+                               @RequestParam(defaultValue = "1") Integer pageNum,
+                               @RequestParam(defaultValue = "10") Integer pageSize) {
+        Page<Message> page = messageService.selectByType(message, pageNum, pageSize);
+        return Result.success(page);
+    }
+
+    @GetMapping("/unreadCountByType")
+    public Result unreadCountByType(@RequestParam Integer userId, @RequestParam String type) {
+        Integer count = messageService.getUnreadCountByType(userId, type);
+        return Result.success(count);
+    }
 }

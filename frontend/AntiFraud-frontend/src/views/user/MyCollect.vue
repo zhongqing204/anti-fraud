@@ -24,8 +24,10 @@
         <div v-for="item in data.tableData" :key="item.id" style="margin-bottom: 15px; background: white; border-radius: 10px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.3s; cursor: pointer" @mouseenter="$event.currentTarget.style.boxShadow='0 4px 16px rgba(0,0,0,0.12)'" @mouseleave="$event.currentTarget.style.boxShadow='0 2px 8px rgba(0,0,0,0.08)'" @click="goToDetail(item)">
           <div style="display: flex; align-items: center; margin-bottom: 15px">
             <img :src="getAvatarUrl(item.userAvatar)" alt="" style="height: 30px; width: 30px; border-radius: 50%; object-fit: cover">
-            <div style="margin-left: 10px; color: #666">{{ item.userName }}</div>
-            <div style="margin-left: auto; color: #999; font-size: 12px">{{ formatTime(item.time) }}</div>
+            <div style="margin-left: 10px;">
+              <div style="color: #666">{{ item.userName }}</div>
+              <div style="color: #999; font-size: 12px; margin-top: 3px">{{ formatTime(item.time) }}</div>
+            </div>
           </div>
           <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px">{{ item.title }}</div>
           <div class="article-content-preview">{{ stripHtml(item.content) }}</div>

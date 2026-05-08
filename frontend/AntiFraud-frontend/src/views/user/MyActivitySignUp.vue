@@ -16,17 +16,27 @@
           </template>
         </el-table-column>
         <el-table-column prop="reason" label="审核说明" show-overflow-tooltip />
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template v-slot="scope">
+            <!-- 【修改】只有待审核的才能取消 -->
             <el-button 
               v-if="scope.row.status === '待审核'" 
-              type="danger" 
+              type="warning" 
               size="small" 
               @click="cancelSignup(scope.row)"
             >
               取消
             </el-button>
-            <span v-else style="color: #999">-</span>
+            <!-- 【新增】只有审核通过的才能删除 -->
+            <el-button 
+              v-if="scope.row.status === '审核通过'" 
+              type="danger" 
+              size="small" 
+              @click="handleDelete(scope.row)"
+            >
+              删除
+            </el-button>
+            <span v-else-if="scope.row.status === '审核拒绝'" style="color: #999">-</span>
           </template>
         </el-table-column>
       </el-table>
@@ -37,16 +47,16 @@
     </div>
 
     <!-- 取消报名对话框 -->
-    <el-dialog title="取消报名" v-model="data.cancelVisible" width="500px" destroy-on-close>
+    <el-dialog title="取消报名" v-model="data.cancelVisible" width="500px" destroy-on-close draggable>
       <div style="padding: 20px">
         <div style="margin-bottom: 20px; color: #666">
-          请说明取消报名的原因：
+          请说明取消报名的原因（可选）：
         </div>
         <el-input 
           v-model="data.cancelReason" 
           type="textarea" 
           :rows="4" 
-          placeholder="请输入取消原因"
+          placeholder="请输入取消原因（选填）"
           maxlength="200"
           show-word-limit
         />
@@ -106,11 +116,6 @@ const cancelSignup = (row) => {
 }
 
 const submitCancel = () => {
-  if (!data.cancelReason || !data.cancelReason.trim()) {
-    ElMessage.warning('请输入取消原因')
-    return
-  }
-
   data.cancelSubmitting = true
   
   request.delete('/activitySignUp/delete/' + data.currentSignupId).then(res => {
@@ -126,6 +131,26 @@ const submitCancel = () => {
     data.cancelSubmitting = false
     ElMessage.error('取消报名失败，请稍后重试')
     console.error(err)
+  })
+}
+
+// 【新增】删除已审核通过的报名记录
+const handleDelete = (row) => {
+  ElMessageBox.confirm('确定要删除这条报名记录吗？', '删除确认', { 
+    type: 'warning',
+    confirmButtonText: '确定',
+    cancelButtonText: '取消'
+  }).then(() => {
+    request.delete('/activitySignUp/delete/' + row.id).then(res => {
+      if (res.code === '200') {
+        ElMessage.success('删除成功')
+        load()
+      } else {
+        ElMessage.error(res.msg || '删除失败')
+      }
+    })
+  }).catch(() => {
+    // 用户取消删除
   })
 }
 

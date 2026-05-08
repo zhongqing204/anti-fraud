@@ -1,26 +1,35 @@
 <template>
-  <div>
-    <div style="background-color: #f8f8f8; padding: 20px">
-      <div style="width: 60%; margin: 0 auto; display: flex; align-items: center; gap: 15px">
-        <el-input prefix-icon="Search" v-model="data.title" @keyup.enter="load" clearable @clear="load" placeholder="请输入视频标题查询" style="width: 350px; height: 40px"></el-input>
+  <div class="video-page">
+    <!-- 顶部搜索栏 -->
+    <div class="search-header">
+      <div class="search-container">
+        <el-input 
+          prefix-icon="Search" 
+          v-model="data.title" 
+          @keyup.enter="load" 
+          clearable 
+          @clear="load" 
+          placeholder="请输入视频标题查询" 
+          class="search-input"
+        ></el-input>
         <el-popover trigger="manual" :width="300" v-model:visible="data.filterVisible">
           <template #reference>
-            <el-button :type="data.hasFilter ? 'primary' : ''" @click="data.filterVisible = !data.filterVisible">
+            <el-button :type="data.hasFilter ? 'primary' : ''" @click="data.filterVisible = !data.filterVisible" class="filter-btn">
               <el-icon><Filter /></el-icon>
               筛选
             </el-button>
           </template>
-          <div style="padding: 10px" @click.stop>
-            <div style="margin-bottom: 15px">
-              <div style="font-weight: bold; margin-bottom: 8px">分类</div>
-              <el-select v-model="data.categoryId" placeholder="请选择分类" clearable style="width: 100%" :teleported="false">
+          <div class="filter-content" @click.stop>
+            <div class="filter-item">
+              <div class="filter-label">分类</div>
+              <el-select v-model="data.categoryId" placeholder="请选择分类" clearable class="filter-select" :teleported="false">
                 <el-option label="全部" :value="undefined" />
                 <el-option v-for="item in data.categoryData" :key="item.id" :label="item.name" :value="item.id" />
               </el-select>
             </div>
-            <div style="margin-bottom: 15px">
-              <div style="font-weight: bold; margin-bottom: 8px">时间</div>
-              <el-select v-model="data.timeFilter" placeholder="请选择时间范围" clearable style="width: 100%" :teleported="false">
+            <div class="filter-item">
+              <div class="filter-label">时间</div>
+              <el-select v-model="data.timeFilter" placeholder="请选择时间范围" clearable class="filter-select" :teleported="false">
                 <el-option label="全部" :value="undefined" />
                 <el-option label="最近一周" value="week" />
                 <el-option label="最近一月" value="month" />
@@ -28,7 +37,7 @@
                 <el-option label="最近一年" value="year" />
               </el-select>
             </div>
-            <div style="display: flex; gap: 10px; justify-content: flex-end">
+            <div class="filter-actions">
               <el-button size="small" @click="resetFilter">重置</el-button>
               <el-button type="primary" size="small" @click="applyFilter">确定</el-button>
             </div>
@@ -36,53 +45,68 @@
         </el-popover>
       </div>
     </div>
-    <div style="width: 60%; margin: 30px auto">
-      <div>
-         <el-row :gutter="20">
-          <el-col :span="6" v-for="item in data.videoData" :key="item.id" style="margin-bottom: 20px">
-            <div class="front_card">
-              <div>
-                <div style="position: relative">
-                  <img :src="getCoverUrl(item.cover)" alt="" style="height: 180px; width: 100%; border-radius: 5px; cursor: pointer" @click="router.push('/front/videoDetail?id=' + item.id)">
-                  <div style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px">
-                    {{ item.duration || '00:00' }}
-                  </div>
-                  <div style="position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.7); color: white; padding: 2px 8px; border-radius: 3px; font-size: 12px; display: flex; align-items: center; gap: 5px">
-                    <el-icon><VideoPlay /></el-icon>
-                    {{ formatViewCount(item.viewCount) }}
-                  </div>
-                </div>
-                <div style="padding: 10px">
-                  <div style="font-size: 16px; font-weight: bold" class="line1">{{ item.title }}</div>
-                  <div style="margin-top: 10px; color: #666; font-size: 13px">
-                    <span>{{ item.createTime }}</span>
-                  </div>
-                  <div style="margin-top: 8px; display: flex; grid-gap: 15px; color: #999; font-size: 12px">
-                    <div style="display: flex; align-items: center; gap: 3px; cursor: pointer" @click.stop="toggleLike(item)">
-                      <img :src="likeIcon" alt="" style="width: 16px; height: 16px" :style="{ filter: item.liked ? 'none' : 'grayscale(100%)', opacity: item.liked ? 1 : 0.5 }">
-                      <span :style="{ color: item.liked ? '#409EFF' : '' }">{{ item.likeCount || 0 }}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 3px; cursor: pointer" @click.stop="toggleCollect(item)">
-                      <img :src="collectIcon" alt="" style="width: 16px; height: 16px" :style="{ filter: item.collected ? 'none' : 'grayscale(100%)', opacity: item.collected ? 1 : 0.5 }">
-                      <span :style="{ color: item.collected ? '#F56C6C' : '' }">{{ item.collectCount || 0 }}</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 3px; cursor: pointer" @click.stop="router.push('/front/videoDetail?id=' + item.id)">
-                      <img :src="commentIcon" alt="" style="width: 16px; height: 16px">
-                      <span>{{ item.commentCount || 0 }}</span>
-                    </div>
-                  </div>
-                </div>
+
+    <!-- 内容区域 -->
+    <div class="content-wrapper">
+      <div class="video-grid">
+        <div 
+          v-for="item in data.videoData" 
+          :key="item.id" 
+          class="video-card fade-in"
+          @click="router.push('/front/videoDetail?id=' + item.id)"
+        >
+          <div class="card-image-wrapper">
+            <img 
+              :src="getCoverUrl(item.cover)" 
+              alt="" 
+              class="card-image"
+            >
+            <div class="image-overlay"></div>
+            <div class="play-icon">▶</div>
+            <div class="duration-badge">{{ item.duration || '00:00' }}</div>
+            <div class="view-count-badge">
+              <el-icon><VideoPlay /></el-icon>
+              {{ formatViewCount(item.viewCount) }}
+            </div>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title line1">{{ item.title }}</h3>
+            <div class="card-meta">
+              <span class="meta-item time">
+                <el-icon><Clock /></el-icon>
+                {{ item.createTime }}
+              </span>
+            </div>
+            <div class="card-actions">
+              <div class="action-item" @click.stop="toggleLike(item)">
+                <img :src="likeIcon" alt="" class="action-icon" :style="{ filter: item.liked ? 'none' : 'grayscale(100%)', opacity: item.liked ? 1 : 0.5 }">
+                <span :style="{ color: item.liked ? '#409EFF' : '' }">{{ item.likeCount || 0 }}</span>
+              </div>
+              <div class="action-item" @click.stop="toggleCollect(item)">
+                <img :src="collectIcon" alt="" class="action-icon" :style="{ filter: item.collected ? 'none' : 'grayscale(100%)', opacity: item.collected ? 1 : 0.5 }">
+                <span :style="{ color: item.collected ? '#F56C6C' : '' }">{{ item.collectCount || 0 }}</span>
+              </div>
+              <div class="action-item" @click.stop>
+                <img :src="commentIcon" alt="" class="action-icon">
+                <span>{{ item.commentCount || 0 }}</span>
               </div>
             </div>
-          </el-col>
-        </el-row>
+          </div>
+        </div>
       </div>
-      <div v-if="data.total" style="margin-top: 20px">
-        <el-pagination @current-change="load" layout="total, prev, pager, next" :page-size="data.pageSize" v-model:current-page="data.pageNum" :total="data.total" />
+      
+      <!-- 分页 -->
+      <div class="pagination-wrapper">
+        <el-pagination 
+          @current-change="load" 
+          layout="total, prev, pager, next, jumper" 
+          :page-size="data.pageSize" 
+          v-model:current-page="data.pageNum" 
+          :total="data.total" 
+        />
       </div>
     </div>
   </div>
-
 </template>
 
 <script setup>
@@ -104,7 +128,7 @@ const data = reactive({
   timeFilter: null,
   categoryData: [],
   pageNum: 1,
-  pageSize: 8,
+  pageSize: 20,
   total: 0,
   videoData: [],
   filterVisible: false,
@@ -199,31 +223,13 @@ const load = () => {
       categoryId: data.categoryId,
     }
   }).then(res => {
+    console.log('Video response:', res)
     if (res.code === '200') {
+      console.log('Records:', res.data?.records)
+      console.log('Total:', res.data?.total)
       let videos = res.data?.records || []
       data.total = res.data?.total || 0
-      
-      // 时间筛选（先筛选，再查询统计数据）
-      if (data.timeFilter) {
-        const now = new Date()
-        videos = videos.filter(item => {
-          const createTime = new Date(item.createTime)
-          const diffDays = (now - createTime) / (1000 * 60 * 60 * 24)
-          
-          switch(data.timeFilter) {
-            case 'week':
-              return diffDays <= 7
-            case 'month':
-              return diffDays <= 30
-            case 'threeMonths':
-              return diffDays <= 90
-            case 'year':
-              return diffDays <= 365
-            default:
-              return true
-          }
-        })
-      }
+      console.log('data.total set to:', data.total)
       
       const videoIds = videos.map(v => v.id)
       if (videoIds.length > 0) {
@@ -286,6 +292,280 @@ load()
 </script>
 
 <style scoped>
+/* 全局样式 */
+.video-page {
+  background: 
+    url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1920&q=80') center/cover,
+    linear-gradient(135deg, rgba(255, 195, 18, 0.15) 0%, rgba(255, 159, 67, 0.15) 100%);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 0;
+}
+
+.video-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    radial-gradient(circle at 25% 35%, rgba(255, 195, 18, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 75% 65%, rgba(255, 159, 67, 0.2) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(255, 107, 107, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* 搜索头部 */
+.search-header {
+  background: transparent;
+  padding: 30px 20px;
+}
+
+.search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.search-input {
+  flex: 1;
+  max-width: 400px;
+}
+
+.search-input :deep(.el-input__wrapper) {
+  border-radius: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.filter-btn {
+  border-radius: 20px;
+  padding: 10px 20px;
+}
+
+.filter-content {
+  padding: 15px;
+}
+
+.filter-item {
+  margin-bottom: 15px;
+}
+
+.filter-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #333;
+  font-size: 14px;
+}
+
+.filter-select {
+  width: 100%;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 15px;
+}
+
+/* 内容区域 */
+.content-wrapper {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 0 20px;
+}
+
+/* 网格布局 */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 25px;
+}
+
+/* 卡片样式 */
+.video-card {
+  background: 
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 248, 245, 0.98) 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  animation: fadeIn 0.6s ease-out;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.video-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.card-image-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  cursor: pointer;
+}
+
+.video-card:hover .card-image {
+  transform: scale(1.05);
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.3));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.video-card:hover .image-overlay {
+  opacity: 1;
+}
+
+.play-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #667eea;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.video-card:hover .play-icon {
+  opacity: 1;
+}
+
+.duration-badge {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.view-count-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-content {
+  padding: 15px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 10px 0;
+  cursor: pointer;
+  transition: color 0.3s ease;
+}
+
+.card-title:hover {
+  color: #667eea;
+}
+
+.card-meta {
+  display: flex;
+  gap: 15px;
+  color: #999;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card-actions {
+  display: flex;
+  gap: 15px;
+  color: #999;
+  font-size: 13px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-item:hover {
+  color: #667eea;
+}
+
+.action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* 分页 */
+.pagination-wrapper {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 文本截断 */
 .line1 {
   display: -webkit-box;
   -webkit-line-clamp: 1;
@@ -295,16 +575,19 @@ load()
   text-overflow: ellipsis;
 }
 
-.front_card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
-  transition: all 0.3s;
-}
-
-.front_card:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-  transform: translateY(-2px);
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .video-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+  }
+  
+  .search-container {
+    flex-direction: column;
+  }
+  
+  .search-input {
+    max-width: 100%;
+  }
 }
 </style>

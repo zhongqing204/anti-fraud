@@ -16,9 +16,9 @@
         <el-form-item>
           <el-button size="large" type="warning" style="width: 100%" @click="register" :loading="data.loading">注 册</el-button>
         </el-form-item>
-        <el-form-item>
-          <el-button size="large" type="primary" style="width: 100%" @click="router.push('/login')">登 录</el-button>
-        </el-form-item>
+        <div style="text-align: right">
+          已有账号？请 <a @click.prevent="goToLogin" style="cursor: pointer; color: #409eff">登录</a>
+        </div>
       </el-form>
     </div>
   </div>
@@ -79,6 +79,10 @@ const data = reactive({
 })
 
 const formRef = ref()
+
+const goToLogin = () => {
+  router.push('/login')
+}
 
 const register = () => {
   formRef.value.validate(valid => {

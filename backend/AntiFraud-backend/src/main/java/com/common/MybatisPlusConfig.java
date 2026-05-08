@@ -28,7 +28,7 @@ public class MybatisPlusConfig {
     }
 
     @Bean
-    public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
+    public SqlSessionFactory sqlSessionFactory(DataSource dataSource, MybatisPlusInterceptor mybatisPlusInterceptor) throws Exception {
         MybatisSqlSessionFactoryBean factoryBean = new MybatisSqlSessionFactoryBean();
         factoryBean.setDataSource(dataSource);
 
@@ -38,6 +38,9 @@ public class MybatisPlusConfig {
         MybatisConfiguration configuration = new MybatisConfiguration();
         configuration.setMapUnderscoreToCamelCase(true);
         factoryBean.setConfiguration(configuration);
+        
+        // 添加分页拦截器
+        factoryBean.setPlugins(mybatisPlusInterceptor);
 
         return factoryBean.getObject();
     }

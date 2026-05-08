@@ -68,6 +68,26 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, Message> impl
         this.update(updateWrapper);
     }
 
+    @Override
+    public Page<Message> selectByType(Message message, Integer pageNum, Integer pageSize) {
+        Page<Message> page = new Page<>(pageNum, pageSize);
+        LambdaQueryWrapper<Message> queryWrapper = buildQueryWrapper(message);
+        // 按类型分组查询：like, collect, comment, report, article_report, activity_signup
+        if (message != null && StringUtils.hasText(message.getType())) {
+            queryWrapper.eq(Message::getType, message.getType());
+        }
+        return this.page(page, queryWrapper);
+    }
+
+    @Override
+    public Integer getUnreadCountByType(Integer userId, String type) {
+        LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Message::getUserId, userId)
+                .eq(Message::getIsRead, 0)
+                .eq(Message::getType, type);
+        return (int) this.count(queryWrapper);
+    }
+
     private LambdaQueryWrapper<Message> buildQueryWrapper(Message message) {
         LambdaQueryWrapper<Message> queryWrapper = new LambdaQueryWrapper<>();
         if (message != null) {

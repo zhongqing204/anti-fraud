@@ -1,6 +1,6 @@
 <template>
   <div style="width: 70%; margin: 20px auto">
-    <div class="card" style="padding: 30px">
+    <div v-if="data.articleData && data.articleData.title" class="card" style="padding: 30px">
       <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px">{{ data.articleData.title }}</div>
       <div style="display: flex; align-items: flex-start; margin-bottom: 20px;">
       <img :src="getAvatarUrl(data.articleData.userAvatar)" alt="" style="height: 30px; width: 30px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
@@ -31,6 +31,11 @@
       </div>
     </div>
 
+    <div v-else style="text-align: center; padding: 100px; color: #999">
+      <el-icon :size="48" style="margin-bottom: 20px"><Loading /></el-icon>
+      <div>加载中...</div>
+    </div>
+
     <div class="card" style="margin-top: 10px; padding: 30px">
       <div v-show="data.showCommentSection" style="display: flex; align-items: center; gap: 10px">
         <el-input 
@@ -56,7 +61,7 @@
       </div>
     </div>
 
-    <el-dialog title="举报内容" v-model="data.articleReportVisible" width="500px" destroy-on-close>
+    <el-dialog title="举报内容" v-model="data.articleReportVisible" width="500px" destroy-on-close draggable>
       <div style="padding: 20px">
         <div style="margin-bottom: 20px">
           <div style="font-weight: bold; margin-bottom: 10px">请选择举报原因</div>
@@ -122,11 +127,14 @@
 </template>
 
 <script setup>
-import {reactive, ref, onMounted} from "vue";
+import {reactive, ref, onMounted, inject} from "vue";
 import request from "@/utils/request.js";
 import {ElMessage} from "element-plus";
 import router from "@/router/index.js";
-import { Plus } from "@element-plus/icons-vue";
+import { Plus, Loading } from "@element-plus/icons-vue";
+
+// 【新增】注入全局消息状态
+const messageState = inject('messageState')
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const commentInputRef = ref(null)
@@ -183,6 +191,8 @@ const toggleLike = () => {
       ElMessage.success('操作成功')
       checkLike()
       loadLikeCount()
+      // 【新增】点赞操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -229,6 +239,8 @@ const toggleCollect = () => {
       ElMessage.success('操作成功')
       checkCollect()
       loadCollectCount()
+      // 【新增】收藏操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -290,6 +302,8 @@ const submit = () => {
       ElMessage.success('评论成功')
       data.content = ''
       loadComment()
+      // 【新增】评论操作后，刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }
@@ -307,6 +321,19 @@ const loadComment = () => {
       data.commentData = res.data || []
     } else {
       ElMessage.error(res.msg)
+    }
+  })
+}
+
+// 【新增】刷新未读消息数
+const refreshUnreadCount = () => {
+  if (!data.user.id) return
+  request.get('/message/unreadCount', {
+    params: { userId: data.user.id }
+  }).then(res => {
+    if (res.code === '200') {
+      const count = res.data || 0
+      messageState.updateUnreadCount(count)
     }
   })
 }
@@ -370,6 +397,8 @@ const submitArticleReport = () => {
     if (res.code === '200') {
       ElMessage.success('举报成功，我们会尽快处理')
       data.articleReportVisible = false
+      // 【新增】举报成功后刷新未读消息数
+      refreshUnreadCount()
     } else {
       ElMessage.error(res.msg)
     }

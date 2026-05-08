@@ -54,6 +54,27 @@ public class ArticleReportServiceImpl extends ServiceImpl<ArticleReportMapper, A
         }
 
         this.save(articleReport);
+
+        // 【新增】发送消息通知给举报人
+        if (articleReport.getUserId() != null) {
+            Message message = new Message();
+            message.setUserId(articleReport.getUserId());
+            message.setFromUserId(0);
+            message.setFromUserName("系统");
+            message.setArticleId(articleReport.getArticleId());
+            message.setArticleTitle(articleReport.getArticleTitle());
+            message.setType("article_report");
+            
+            String contentPreview = articleReport.getArticleTitle();
+            if (contentPreview != null && contentPreview.length() > 30) {
+                contentPreview = contentPreview.substring(0, 30) + "...";
+            }
+            
+            message.setContent("您举报的帖子《" + contentPreview + "》已提交，等待处理");
+            message.setIsRead(0);
+            message.setCreatedTime(LocalDateTime.now());
+            messageService.add(message);
+        }
     }
 
     @Override
@@ -88,7 +109,8 @@ public class ArticleReportServiceImpl extends ServiceImpl<ArticleReportMapper, A
                 report.setReason(reason);
             }
 
-            if (report.getUserId() != null && !"待处理".equals(status) && "待处理".equals(oldStatus)) {
+            // 【修复】只要状态发生变化且不是"待处理"就发送通知
+            if (report.getUserId() != null && !"待处理".equals(status) && !status.equals(oldStatus)) {
                 Message message = new Message();
                 message.setUserId(report.getUserId());
                 message.setFromUserId(0);
