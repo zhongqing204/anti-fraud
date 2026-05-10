@@ -13,5 +13,15 @@ public interface ActivitySignUpService extends IService<ActivitySignup> {
 
     List<ActivitySignup> selectAll(ActivitySignup activitySignup);
 
-    Page<ActivitySignup> selectPage(String userName, String activityName,Integer userId, Integer pageNum, Integer pageSize);
+    Page<ActivitySignup> selectPage(String userName, String realName, Integer activityId, String status, Integer pageNum, Integer pageSize);
+
+    /**
+     * 申请取消报名
+     */
+    void applyCancel(Integer signupId, String cancelReason);
+
+    /**
+     * 审批取消报名申请
+     */
+    void approveCancel(Integer signupId, Boolean approved, String reason);
 }

@@ -57,7 +57,8 @@ public class ActivitySignUpController {
      */
     @DeleteMapping("/delete/{id}")
     public Result delete(@PathVariable Integer id) {
-        activitySignUpService.removeById(id);
+        // 使用deleteBatch方法来确保减少活动报名人数
+        activitySignUpService.deleteBatch(List.of(id));
         return Result.success("删除成功");
     }
 
@@ -93,12 +94,43 @@ public class ActivitySignUpController {
      */
     @GetMapping("/selectPage")
     public Result selectPage(@RequestParam(required = false) String userName,
-                             @RequestParam(required = false) String activityName,
-                             @RequestParam(required = false) Integer userId,
+                             @RequestParam(required = false) String realName,
+                             @RequestParam(required = false) Integer activityId,
+                             @RequestParam(required = false) String status,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize) {
-        Page<ActivitySignup> pageInfo = activitySignUpService.selectPage(userName,activityName,userId, pageNum, pageSize);
+        Page<ActivitySignup> pageInfo = activitySignUpService.selectPage(userName, realName, activityId, status, pageNum, pageSize);
         return Result.success(pageInfo);
+    }
+
+    /**
+     * 申请取消报名
+     */
+    @PostMapping("/applyCancel")
+    public Result applyCancel(@RequestBody ActivitySignup activitySignup) {
+        activitySignUpService.applyCancel(activitySignup.getId(), activitySignup.getCancelReason());
+        
+        // 发送消息通知管理员
+        sendCancelApplyMessage(activitySignup.getUserId(), activitySignup.getActivityName());
+        
+        return Result.success("取消申请已提交，等待管理员审批");
+    }
+
+    /**
+     * 审批取消报名申请
+     */
+    @PutMapping("/approveCancel")
+    public Result approveCancel(@RequestBody ActivitySignup activitySignup) {
+        activitySignUpService.approveCancel(activitySignup.getId(), 
+            "已同意".equals(activitySignup.getCancelStatus()), 
+            activitySignup.getReason());
+        
+        // 如果同意取消，发送消息通知用户
+        if ("已同意".equals(activitySignup.getCancelStatus())) {
+            sendCancelApprovedMessage(activitySignup.getUserId(), activitySignup.getActivityName());
+        }
+        
+        return Result.success("审批成功");
     }
 
     /**
@@ -126,6 +158,34 @@ public class ActivitySignUpController {
         message.setContent(contentText);
         message.setIsRead(0);
 
+        messageService.add(message);
+    }
+
+    /**
+     * 发送取消申请消息给管理员
+     */
+    private void sendCancelApplyMessage(Integer userId, String activityName) {
+        // 获取所有管理员ID（这里简化处理，实际应该查询管理员列表）
+        // 暂时发送给ID为1的管理员
+        Message message = new Message();
+        message.setUserId(1); // 管理员ID
+        message.setType("activity_cancel_apply");
+        message.setContent("用户申请取消活动「" + activityName + "」的报名，请及时审批");
+        message.setIsRead(0);
+        messageService.add(message);
+    }
+
+    /**
+     * 发送取消审批结果消息给用户
+     */
+    private void sendCancelApprovedMessage(Integer userId, String activityName) {
+        if (userId == null) return;
+        
+        Message message = new Message();
+        message.setUserId(userId);
+        message.setType("activity_cancel_result");
+        message.setContent("您的活动「" + activityName + "」取消报名申请已通过，报名已取消");
+        message.setIsRead(0);
         messageService.add(message);
     }
 }

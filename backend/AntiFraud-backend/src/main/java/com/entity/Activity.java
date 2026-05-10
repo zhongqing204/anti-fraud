@@ -22,6 +22,10 @@ public class Activity {
     private String activityType;
     private String location;
     private String participationMethod;
+    private Integer maxParticipants; // 限制人数（0表示不限制）- 短期活动使用
+    private Integer currentParticipants; // 当前报名人数 - 短期活动使用
+    private String activityDurationType; // 活动持续时间类型：short-短期，long-长期
+    private Integer durationDays; // 持续天数（仅长期活动使用）
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime startTime;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
@@ -101,5 +105,37 @@ public class Activity {
 
     public void setCategoryName(String categoryName) {
         this.categoryName = categoryName;
+    }
+
+    public Integer getMaxParticipants() {
+        return maxParticipants;
+    }
+
+    public void setMaxParticipants(Integer maxParticipants) {
+        this.maxParticipants = maxParticipants;
+    }
+
+    public Integer getCurrentParticipants() {
+        return currentParticipants;
+    }
+
+    public void setCurrentParticipants(Integer currentParticipants) {
+        this.currentParticipants = currentParticipants;
+    }
+
+    public String getActivityDurationType() {
+        return activityDurationType;
+    }
+
+    public void setActivityDurationType(String activityDurationType) {
+        this.activityDurationType = activityDurationType;
+    }
+
+    public Integer getDurationDays() {
+        return durationDays;
+    }
+
+    public void setDurationDays(Integer durationDays) {
+        this.durationDays = durationDays;
     }
 }

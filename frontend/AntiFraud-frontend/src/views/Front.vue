@@ -13,6 +13,7 @@
           <el-menu-item index="/front/activity">反诈活动</el-menu-item>
           <el-menu-item index="/front/article">反诈论坛</el-menu-item>
           <el-menu-item index="/front/report">反诈举报</el-menu-item>
+          <el-menu-item index="/front/chat">在线咨询</el-menu-item>
           <el-menu-item index="/front/notice">系统公告</el-menu-item>
         </el-menu>
       </div>

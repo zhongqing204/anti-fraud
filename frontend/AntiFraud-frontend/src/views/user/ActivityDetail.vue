@@ -9,11 +9,11 @@
           v-if="!data.hasSignedUp" 
           type="primary" 
           size="small" 
-          :disabled="data.activityData.status === '已结束'"  
+          :disabled="isSignupDisabled()"  
           @click="showSignupDialog" 
           style="margin-left: 30px;"
         >
-          报名
+          {{ getSignupButtonText() }}
         </el-button>
         <el-button 
           v-else-if="data.signupStatus === '待审核'" 
@@ -24,6 +24,18 @@
         >
           取消报名
         </el-button>
+        <el-button 
+          v-else-if="data.signupStatus === '审核通过' && !data.cancelApplyPending" 
+          type="danger" 
+          size="small" 
+          @click="showCancelApplyDialog"
+          style="margin-left: 30px;"
+        >
+          申请退报
+        </el-button>
+        <el-tag v-else-if="data.signupStatus === '审核通过' && data.cancelApplyPending" type="warning" size="small" style="margin-left: 30px;">
+          退报申请待审批
+        </el-tag>
         <el-tag v-else-if="data.signupStatus === '审核通过'" type="success" size="small" style="margin-left: 30px;">
           已报名（审核通过）
         </el-tag>
@@ -36,6 +48,15 @@
       <div style="margin-top: 30px; padding: 25px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
         <!-- 【新增】活动类型标签（最顶部，非常醒目） -->
         <div style="text-align: center; margin-bottom: 20px;">
+          <!-- 持续时间类型标签 -->
+          <el-tag 
+            :type="data.activityData.activityDurationType === 'long' ? 'warning' : 'info'" 
+            size="large"
+            style="font-size: 16px; padding: 10px 30px; font-weight: bold; margin-right: 10px;"
+          >
+            {{ data.activityData.activityDurationType === 'long' ? `📅 长期活动（${data.activityData.durationDays}天）` : '⏱️ 短期活动' }}
+          </el-tag>
+          <!-- 活动形式标签 -->
           <el-tag 
             :type="data.activityData.activityType === '线上' ? 'success' : 'primary'" 
             size="large"
@@ -46,16 +67,36 @@
         </div>
         
         <div style="display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 20px;">
+          <!-- 短期活动：显示开始和结束时间 -->
+          <template v-if="data.activityData.activityDurationType === 'short'">
+            <div style="text-align: center;">
+              <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">⏰ 活动开始</div>
+              <div style="font-size: 18px; font-weight: bold; color: #fff; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">{{ formatTime(data.activityData.startTime) }}</div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">⏰ 活动结束</div>
+              <div style="font-size: 18px; font-weight: bold; color: #fff; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">{{ formatTime(data.activityData.endTime) }}</div>
+            </div>
+          </template>
+          
+          <!-- 长期活动：显示日期范围和每天时间段 -->
+          <template v-else>
+            <div style="text-align: center;">
+              <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">📅 活动周期</div>
+              <div style="font-size: 16px; font-weight: bold; color: #fff; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">
+                {{ formatDateOnly(data.activityData.startTime) }} 至 {{ formatDateOnly(data.activityData.endTime) }}
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">⏰ 每天时间</div>
+              <div style="font-size: 16px; font-weight: bold; color: #fff; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">
+                {{ formatTimeOnly(data.activityData.startTime) }} - {{ formatTimeOnly(data.activityData.endTime) }}
+              </div>
+            </div>
+          </template>
+          
           <div style="text-align: center;">
-            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">⏰ 活动开始</div>
-            <div style="font-size: 18px; font-weight: bold; color: #fff; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">{{ formatTime(data.activityData.startTime) }}</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">⏰ 活动结束</div>
-            <div style="font-size: 18px; font-weight: bold; color: #fff; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">{{ formatTime(data.activityData.endTime) }}</div>
-          </div>
-          <div style="text-align: center;">
-            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">📅 持续天数</div>
+            <div style="font-size: 13px; color: rgba(255, 255, 255, 0.9); margin-bottom: 8px; font-weight: 500;">⏱️ 持续时间</div>
             <div style="font-size: 20px; font-weight: bold; color: #ffd700; background: rgba(255, 255, 255, 0.2); padding: 8px 15px; border-radius: 8px;">{{ calculateDuration() }}</div>
           </div>
         </div>
@@ -77,6 +118,25 @@
               <!-- 显示富文本内容（包含二维码图片等） -->
               <div v-if="data.activityData.participationMethod" v-html="data.activityData.participationMethod" style="color: #333; line-height: 1.8;"></div>
               <div v-else style="color: #999; text-align: center;">未设置参与方式</div>
+            </div>
+          </div>
+          
+          <!-- 【新增】报名人数信息 -->
+          <div style="margin-top: 20px; text-align: center;">
+            <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); margin-bottom: 10px; font-weight: 500;">👥 报名情况</div>
+            <div style="font-size: 18px; font-weight: bold; color: #ffd700; background: rgba(255, 255, 255, 0.25); padding: 12px 20px; border-radius: 8px; display: inline-block;">
+              <span v-if="data.activityData.maxParticipants && data.activityData.maxParticipants > 0">
+                已报名：{{ data.activityData.currentParticipants || 0 }} / {{ data.activityData.maxParticipants }} 人
+                <span v-if="getRemainingSlots() > 0" style="margin-left: 10px; font-size: 14px; color: #fff;">
+                  (剩余 {{ getRemainingSlots() }} 个名额)
+                </span>
+                <span v-else style="margin-left: 10px; font-size: 14px; color: #ff6b6b;">
+                  (已满员)
+                </span>
+              </span>
+              <span v-else>
+                已报名：{{ data.activityData.currentParticipants || 0 }} 人（不限制人数）
+              </span>
             </div>
           </div>
         </div>
@@ -133,6 +193,22 @@
     <!-- 【新增】报名表单对话框 -->
     <el-dialog title="活动报名" v-model="data.signupVisible" width="600px" destroy-on-close draggable>
       <el-form :model="data.signupForm" label-width="120px" style="padding: 20px">
+        <!-- 长期活动：选择报名日期 -->
+        <el-form-item v-if="data.activityData.activityDurationType === 'long'" label="选择日期" required>
+          <el-select v-model="data.signupForm.scheduleDate" placeholder="请选择报名日期" style="width: 100%">
+            <el-option
+              v-for="schedule in data.schedules"
+              :key="schedule.id"
+              :label="`${schedule.scheduleDate} (${schedule.currentParticipants}/${schedule.maxParticipants || '不限'}人)`"
+              :value="schedule.scheduleDate"
+              :disabled="schedule.maxParticipants > 0 && schedule.currentParticipants >= schedule.maxParticipants"
+            />
+          </el-select>
+          <div style="color: #999; font-size: 12px; margin-top: 5px;">
+            每天独立限制人数，可选择任意未报满的日期
+          </div>
+        </el-form-item>
+        
         <el-form-item label="真实姓名" required>
           <el-input v-model="data.signupForm.realName" placeholder="请输入真实姓名" />
         </el-form-item>
@@ -144,8 +220,8 @@
         </el-form-item>
         <el-form-item label="性别">
           <el-radio-group v-model="data.signupForm.gender">
-            <el-radio label="男">男</el-radio>
-            <el-radio label="女">女</el-radio>
+            <el-radio value="男">男</el-radio>
+            <el-radio value="女">女</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="年龄">
@@ -189,6 +265,30 @@
         <el-button type="danger" @click="submitCancel" :loading="data.cancelSubmitting">确认取消</el-button>
       </template>
     </el-dialog>
+
+    <!-- 【新增】申请退报对话框 -->
+    <el-dialog title="申请退报" v-model="data.cancelApplyVisible" width="500px" destroy-on-close draggable>
+      <div style="padding: 20px">
+        <div style="margin-bottom: 10px; color: #f56c6c; font-weight: bold;">
+          ⚠️ 注意：您的报名已审核通过，需要管理员审批才能取消
+        </div>
+        <div style="margin-bottom: 20px; color: #666">
+          请说明退报原因（选填）：
+        </div>
+        <el-input 
+          v-model="data.cancelApplyReason" 
+          type="textarea" 
+          :rows="4" 
+          placeholder="请输入退报原因，方便管理员了解情况"
+          maxlength="500"
+          show-word-limit
+        />
+      </div>
+      <template #footer>
+        <el-button @click="data.cancelApplyVisible = false">取消</el-button>
+        <el-button type="primary" @click="submitCancelApply" :loading="data.cancelApplySubmitting">提交申请</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -204,12 +304,6 @@ const messageState = inject('messageState')
 
 const baseUrl = import.meta.env.VITE_BASE_URL
 const commentInputRef = ref(null)
-
-// 【新增】格式化时间显示（精确到分钟）
-const formatTime = (time) => {
-  if (!time) return '未设置'
-  return time.replace('T', ' ').substring(0, 16)
-}
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('xm-user') || '{}'),
@@ -234,12 +328,19 @@ const data = reactive({
     gender: '男',
     age: null,
     organization: '',
-    remark: ''
+    remark: '',
+    scheduleDate: '' // 【新增】报名日期（长期活动使用）
   },
+  schedules: [], // 【新增】活动日程列表（长期活动使用）
   // 【新增】取消报名相关数据
   cancelVisible: false,
   cancelSubmitting: false,
-  cancelReason: ''
+  cancelReason: '',
+  // 【新增】申请退报相关数据
+  cancelApplyVisible: false,
+  cancelApplySubmitting: false,
+  cancelApplyReason: '',
+  cancelApplyPending: false // 是否有待审批的退报申请
 })
 
 const getAvatarUrl = (avatar) => {
@@ -250,7 +351,25 @@ const getAvatarUrl = (avatar) => {
   return baseUrl + avatar
 }
 
-// ===== 新增方法：计算活动持续天数 =====
+// 【新增】格式化时间显示（精确到分钟）
+const formatTime = (time) => {
+  if (!time) return '-'
+  return time.replace('T', ' ').substring(0, 16)
+}
+
+// 【新增】仅格式化日期部分
+const formatDateOnly = (time) => {
+  if (!time) return '-'
+  return time.substring(0, 10)
+}
+
+// 【新增】仅格式化时间部分
+const formatTimeOnly = (time) => {
+  if (!time) return '-'
+  return time.substring(11, 16)
+}
+
+// ===== 新增方法：计算活动持续时间（精确到天）=====
 const calculateDuration = () => {
   if (!data.activityData.startTime || !data.activityData.endTime) {
     return '未设置'
@@ -258,8 +377,62 @@ const calculateDuration = () => {
   const start = new Date(data.activityData.startTime)
   const end = new Date(data.activityData.endTime)
   const diffTime = end - start
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-  return diffDays > 0 ? `${diffDays} 天` : '当天'
+  
+  // 计算总天数
+  const totalDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1因为包含当天
+  
+  if (totalDays <= 0) {
+    return '0天'
+  }
+  
+  return `${totalDays}天`
+}
+
+// 【新增】获取剩余名额
+const getRemainingSlots = () => {
+  if (!data.activityData.maxParticipants || data.activityData.maxParticipants <= 0) {
+    return -1 // 不限制
+  }
+  const current = data.activityData.currentParticipants || 0
+  return Math.max(0, data.activityData.maxParticipants - current)
+}
+
+// 【新增】判断是否禁用报名按钮
+const isSignupDisabled = () => {
+  // 活动已结束
+  if (data.activityData.status === '已结束') {
+    return true
+  }
+  
+  // 【新增】短期活动：如果活动正在进行中，禁止报名
+  if (data.activityData.activityDurationType === 'short' && data.activityData.status === '进行中') {
+    return true
+  }
+  
+  // 人数已满
+  const remaining = getRemainingSlots()
+  if (remaining !== -1 && remaining <= 0) {
+    return true
+  }
+  return false
+}
+
+// 【新增】获取报名按钮文字
+const getSignupButtonText = () => {
+  if (data.activityData.status === '已结束') {
+    return '活动已结束'
+  }
+  
+  // 【新增】短期活动：进行中的提示
+  if (data.activityData.activityDurationType === 'short' && data.activityData.status === '进行中') {
+    return '活动进行中，无法报名'
+  }
+  
+  const remaining = getRemainingSlots()
+  if (remaining !== -1 && remaining <= 0) {
+    return '报名已满'
+  }
+  return '报名'
 }
 
 const loadActivityDetail = () => {
@@ -270,11 +443,50 @@ const loadActivityDetail = () => {
   getActivityDetail(data.activityId).then(res => {
     if (res.code === '200') {
       data.activityData = res.data
+      // 【新增】如果是长期活动，加载日程列表
+      if (data.activityData.activityDurationType === 'long') {
+        loadSchedules()
+      }
       // 【新增】检查是否已报名
       checkSignupStatus()
     } else {
       ElMessage.error(res.msg)
     }
+  })
+}
+
+// 【新增】加载活动日程（长期活动）
+const loadSchedules = () => {
+  console.log('加载日程，活动ID:', data.activityId)
+  console.log('活动类型:', data.activityData.activityDurationType)
+  
+  request.get('/activitySchedule/selectByActivityId', {
+    params: {
+      activityId: data.activityId
+    }
+  }).then(res => {
+    console.log('日程响应:', res)
+    // 后端直接返回数组，不是 {code, data} 格式
+    if (Array.isArray(res)) {
+      data.schedules = res || []
+      console.log('日程数据:', data.schedules)
+      console.log('日程数量:', data.schedules.length)
+      if (data.schedules.length > 0) {
+        console.log('第一条日程:', data.schedules[0])
+      }
+    } else if (res.code === '200') {
+      data.schedules = res.data || []
+      console.log('日程数据:', data.schedules)
+      console.log('日程数量:', data.schedules.length)
+      if (data.schedules.length > 0) {
+        console.log('第一条日程:', data.schedules[0])
+      }
+    } else {
+      console.error('获取日程失败:', res.msg)
+    }
+  }).catch(err => {
+    console.error('加载日程失败:', err)
+    console.error('错误详情:', err.response?.data)
   })
 }
 
@@ -289,9 +501,12 @@ const checkSignupStatus = () => {
     if (res.code === '200' && res.data && res.data.length > 0) {
       data.hasSignedUp = true
       data.signupStatus = res.data[0].status
+      // 检查是否有待审批的退报申请
+      data.cancelApplyPending = res.data[0].cancelStatus === '待审批'
     } else {
       data.hasSignedUp = false
       data.signupStatus = ''
+      data.cancelApplyPending = false
     }
   })
 }
@@ -303,6 +518,16 @@ const showSignupDialog = () => {
     router.push('/login')
     return
   }
+  
+  console.log('活动类型:', data.activityData.activityDurationType)
+  console.log('当前日程数据:', data.schedules)
+  
+  // 如果是长期活动且没有日程数据，重新加载
+  if (data.activityData.activityDurationType === 'long' && (!data.schedules || data.schedules.length === 0)) {
+    console.log('重新加载日程...')
+    loadSchedules()
+  }
+  
   data.signupForm = {
     realName: '',
     phone: '',
@@ -310,13 +535,20 @@ const showSignupDialog = () => {
     gender: '男',
     age: null,
     organization: '',
-    remark: ''
+    remark: '',
+    scheduleDate: '' // 重置日期选择
   }
   data.signupVisible = true
 }
 
 // 【新增】提交报名
 const submitSignup = () => {
+  // 长期活动：验证是否选择了日期
+  if (data.activityData.activityDurationType === 'long' && !data.signupForm.scheduleDate) {
+    ElMessage.warning('请选择报名日期')
+    return
+  }
+  
   // 验证必填项
   if (!data.signupForm.realName || !data.signupForm.realName.trim()) {
     ElMessage.warning('请输入真实姓名')
@@ -345,6 +577,7 @@ const submitSignup = () => {
     remark: data.signupForm.remark,
     activityId: data.activityId,
     activityName: data.activityData.title,
+    scheduleDate: data.signupForm.scheduleDate || null, // 【新增】报名日期
     status: '待审核'
   }).then(res => {
     data.signupSubmitting = false
@@ -370,6 +603,56 @@ const showCancelDialog = () => {
   }
   data.cancelReason = ''
   data.cancelVisible = true
+}
+
+// 【新增】显示申请退报对话框
+const showCancelApplyDialog = () => {
+  // 【新增】活动进行中禁止退报
+  if (data.activityData.status === '进行中') {
+    ElMessage.warning('活动正在进行中，无法申请退报')
+    return
+  }
+  data.cancelApplyReason = ''
+  data.cancelApplyVisible = true
+}
+
+// 【新增】提交退报申请
+const submitCancelApply = () => {
+  data.cancelApplySubmitting = true
+  
+  // 先获取报名记录ID
+  request.get('/activitySignUp/selectAll', {
+    params: {
+      userId: data.user.id,
+      activityId: data.activityId
+    }
+  }).then(res => {
+    if (res.code === '200' && res.data && res.data.length > 0) {
+      const signupId = res.data[0].id
+      
+      // 提交退报申请
+      request.post('/activitySignUp/applyCancel', {
+        id: signupId,
+        cancelReason: data.cancelApplyReason
+      }).then(applyRes => {
+        data.cancelApplySubmitting = false
+        if (applyRes.code === '200') {
+          ElMessage.success('退报申请已提交，等待管理员审批')
+          data.cancelApplyVisible = false
+          checkSignupStatus()
+        } else {
+          ElMessage.error(applyRes.msg || '提交失败')
+        }
+      }).catch(err => {
+        data.cancelApplySubmitting = false
+        ElMessage.error('提交失败，请稍后重试')
+        console.error(err)
+      })
+    } else {
+      data.cancelApplySubmitting = false
+      ElMessage.error('未找到报名记录')
+    }
+  })
 }
 
 // 【新增】提交取消报名

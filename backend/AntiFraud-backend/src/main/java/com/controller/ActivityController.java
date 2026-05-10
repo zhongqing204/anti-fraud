@@ -78,6 +78,8 @@ public class ActivityController {
     public Result selectPage(@RequestParam(required = false) String title,
                              @RequestParam(required = false) Integer categoryId,
                              @RequestParam(required = false) String status,
+                             @RequestParam(required = false) String activityType,
+                             @RequestParam(required = false) String activityDurationType,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize){
         Activity activity = new Activity();
@@ -89,6 +91,12 @@ public class ActivityController {
         }
         if (StringUtils.hasText(status)){
             activity.setStatus(status);
+        }
+        if (StringUtils.hasText(activityType)){
+            activity.setActivityType(activityType);
+        }
+        if (StringUtils.hasText(activityDurationType)){
+            activity.setActivityDurationType(activityDurationType);
         }
         Page<Activity> page = activityService.selectPage(activity, pageNum, pageSize);
         return Result.success(page);

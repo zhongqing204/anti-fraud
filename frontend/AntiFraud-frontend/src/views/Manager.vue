@@ -103,6 +103,7 @@
             </template>
             <el-menu-item index="/manager/carousel">轮播图管理</el-menu-item>
             <el-menu-item index="/manager/notice">系统公告</el-menu-item>
+            <el-menu-item index="/manager/chat">在线咨询管理</el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="8">

@@ -34,6 +34,15 @@
             </el-tag>
           </template>
         </el-table-column>
+        <!-- 【新增】限制人数列 -->
+        <el-table-column label="限制人数" width="100">
+          <template v-slot="scope">
+            <span v-if="scope.row.maxParticipants && scope.row.maxParticipants > 0">
+              {{ scope.row.currentParticipants || 0 }}/{{ scope.row.maxParticipants }}
+            </span>
+            <span v-else style="color: #999">不限制</span>
+          </template>
+        </el-table-column>
         <!-- 【修改】时间显示精确到分钟 -->
         <el-table-column prop="startTime" label="开始时间" width="160">
           <template v-slot="scope">
@@ -55,7 +64,7 @@
         </el-table-column>
         <el-table-column prop="status" label="活动状态" width="100">
           <template v-slot="scope">
-            <el-tag :type="scope.row.status === '已结束' ? 'info' : 'success'">{{ scope.row.status || '进行中' }}</el-tag>
+            <el-tag :type="getStatusType(scope.row.status)">{{ scope.row.status || '进行中' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="createTime" label="创建时间" width="160" />
@@ -102,11 +111,30 @@
         </el-form-item>
         
         <!-- 【新增】活动类型选择 -->
-        <el-form-item prop="activityType" label="活动类型">
+        <el-form-item prop="activityType" label="活动形式">
           <el-radio-group v-model="data.form.activityType">
             <el-radio value="线上">线上</el-radio>
             <el-radio value="线下">线下</el-radio>
           </el-radio-group>
+        </el-form-item>
+        
+        <!-- 【新增】持续时间类型选择 -->
+        <el-form-item prop="activityDurationType" label="活动类型">
+          <el-radio-group v-model="data.form.activityDurationType">
+            <el-radio value="short">短期活动（一天）</el-radio>
+            <el-radio value="long">长期活动（多天）</el-radio>
+          </el-radio-group>
+          <div style="color: #999; font-size: 12px; margin-top: 5px;">
+            短期：只开一天；长期：持续多天，每天固定时间段
+          </div>
+        </el-form-item>
+        
+        <!-- 【新增】持续天数（仅长期活动显示） -->
+        <el-form-item v-if="data.form.activityDurationType === 'long'" prop="durationDays" label="持续天数">
+          <el-input-number v-model="data.form.durationDays" :min="2" :max="30" style="width: 100%" />
+          <div style="color: #999; font-size: 12px; margin-top: 5px;">
+            根据开始和结束时间自动计算，也可手动调整
+          </div>
         </el-form-item>
         
         <!-- 【新增】线下活动地点 -->
@@ -133,36 +161,117 @@
           </div>
         </el-form-item>
         
-        <!-- ===== 活动开始时间（精确到分钟） ===== -->
-        <el-form-item prop="startTime" label="开始时间">
-          <el-date-picker
-              v-model="data.form.startTime"
-              type="datetime"
-              placeholder="请选择活动开始时间"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              format="YYYY-MM-DD HH:mm"
-              style="width: 100%"
-          />
-        </el-form-item>
+        <!-- ===== 短期活动：日期 + 时间段 ===== -->
+        <template v-if="data.form.activityDurationType === 'short'">
+          <el-form-item prop="activityDate" label="活动日期">
+            <el-date-picker
+                v-model="data.form.activityDate"
+                type="date"
+                placeholder="请选择活动日期"
+                value-format="YYYY-MM-DD"
+                format="YYYY-MM-DD"
+                style="width: 100%"
+            />
+          </el-form-item>
+          
+          <el-form-item label="活动时间段" required>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <el-time-picker
+                  v-model="data.form.startTimeOnly"
+                  placeholder="开始时间"
+                  value-format="HH:mm:ss"
+                  format="HH:mm"
+                  style="flex: 1"
+                  :disabled-hours="getDisabledStartHours"
+                  :disabled-minutes="getDisabledStartMinutes"
+              />
+              <span>至</span>
+              <el-time-picker
+                  v-model="data.form.endTimeOnly"
+                  placeholder="结束时间"
+                  value-format="HH:mm:ss"
+                  format="HH:mm"
+                  style="flex: 1"
+                  :disabled-hours="getDisabledEndHours"
+                  :disabled-minutes="getDisabledEndMinutes"
+              />
+            </div>
+            <div style="color: #999; font-size: 12px; margin-top: 5px;">
+              例如：14:00-16:00，表示下午2点到4点
+            </div>
+          </el-form-item>
+        </template>
         
-        <!-- ===== 活动结束时间（精确到分钟） ===== -->
-        <el-form-item prop="endTime" label="结束时间">
-          <el-date-picker
-              v-model="data.form.endTime"
-              type="datetime"
-              placeholder="请选择活动结束时间"
-              value-format="YYYY-MM-DD HH:mm:ss"
-              format="YYYY-MM-DD HH:mm"
-              style="width: 100%"
-          />
-        </el-form-item>
+        <!-- ===== 长期活动：活动周期 + 每天时间段 ===== -->
+        <template v-else>
+          <el-form-item prop="startDate" label="活动开始日期">
+            <el-date-picker
+                v-model="data.form.startDate"
+                type="date"
+                placeholder="请选择活动开始日期"
+                value-format="YYYY-MM-DD"
+                format="YYYY-MM-DD"
+                style="width: 100%"
+                @change="calculateDurationDays"
+            />
+          </el-form-item>
+          
+          <el-form-item prop="endDate" label="活动结束日期">
+            <el-date-picker
+                v-model="data.form.endDate"
+                type="date"
+                placeholder="请选择活动结束日期"
+                value-format="YYYY-MM-DD"
+                format="YYYY-MM-DD"
+                style="width: 100%"
+                :disabled-date="disabledEndDate"
+                @change="calculateDurationDays"
+            />
+          </el-form-item>
+          
+          <el-form-item label="每天活动时间段" required>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <el-time-picker
+                  v-model="data.form.dailyStartTime"
+                  placeholder="每天开始时间"
+                  value-format="HH:mm:ss"
+                  format="HH:mm"
+                  style="flex: 1"
+                  :disabled-hours="getDisabledDailyStartHours"
+                  :disabled-minutes="getDisabledDailyStartMinutes"
+              />
+              <span>至</span>
+              <el-time-picker
+                  v-model="data.form.dailyEndTime"
+                  placeholder="每天结束时间"
+                  value-format="HH:mm:ss"
+                  format="HH:mm"
+                  style="flex: 1"
+                  :disabled-hours="getDisabledDailyEndHours"
+                  :disabled-minutes="getDisabledDailyEndMinutes"
+              />
+            </div>
+            <div style="color: #999; font-size: 12px; margin-top: 5px;">
+              例如：12:00-13:00，表示每天中午12点到1点开放
+            </div>
+          </el-form-item>
+        </template>
         
-        <el-form-item prop="status" label="活动状态">
-          <el-select v-model="data.form.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="未开始" value="未开始" />
-            <el-option label="进行中" value="进行中" />
-            <el-option label="已结束" value="已结束" />
-          </el-select>
+        <!-- 【新增】限制人数 -->
+        <el-form-item label="限制人数">
+          <el-input-number 
+            v-model="data.form.maxParticipants" 
+            :min="0" 
+            :max="99999"
+            placeholder="0表示不限制"
+            style="width: 100%"
+          />
+          <div style="color: #999; font-size: 12px; margin-top: 5px;">
+            <span v-if="data.form.activityDurationType === 'long'">
+              每天的限制人数（共 {{ data.form.durationDays || 1 }} 天，每天可报 {{ data.form.maxParticipants || '不限' }} 人）
+            </span>
+            <span v-else>设置为0表示不限制报名人数</span>
+          </div>
         </el-form-item>
         
         <!-- 修改：使用 wangEditor 富文本编辑器 -->
@@ -307,6 +416,176 @@ const formatTime = (time) => {
   return time.replace('T', ' ').substring(0, 16)
 }
 
+// 【新增】监听开始和结束时间变化，自动计算持续天数
+const calculateDurationDays = () => {
+  if (data.form.activityDurationType !== 'long') return
+  if (!data.form.startDate || !data.form.endDate) return
+  
+  const start = new Date(data.form.startDate)
+  const end = new Date(data.form.endDate)
+  
+  // 计算相差的天数
+  const diffTime = end.getTime() - start.getTime()
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1 // +1因为包含当天
+  
+  if (diffDays > 0 && diffDays !== data.form.durationDays) {
+    data.form.durationDays = diffDays
+  }
+}
+
+// 【新增】验证时间合理性
+const validateTimeRange = () => {
+  if (data.form.activityDurationType === 'short') {
+    // 短期活动：验证时间段
+    if (data.form.startTimeOnly && data.form.endTimeOnly) {
+      const start = new Date(`2000-01-01 ${data.form.startTimeOnly}`)
+      const end = new Date(`2000-01-01 ${data.form.endTimeOnly}`)
+      if (end <= start) {
+        ElMessage.warning('结束时间必须晚于开始时间')
+        data.form.endTimeOnly = ''
+        return false
+      }
+    }
+  } else {
+    // 长期活动：验证日期和时间段
+    if (data.form.startDate && data.form.endDate) {
+      const start = new Date(data.form.startDate)
+      const end = new Date(data.form.endDate)
+      if (end < start) {
+        ElMessage.warning('结束日期不能早于开始日期')
+        data.form.endDate = ''
+        return false
+      }
+    }
+    if (data.form.dailyStartTime && data.form.dailyEndTime) {
+      const start = new Date(`2000-01-01 ${data.form.dailyStartTime}`)
+      const end = new Date(`2000-01-01 ${data.form.dailyEndTime}`)
+      if (end <= start) {
+        ElMessage.warning('每天结束时间必须晚于开始时间')
+        data.form.dailyEndTime = ''
+        return false
+      }
+    }
+  }
+  return true
+}
+
+// ===== 短期活动时间禁用逻辑 =====
+// 禁用开始时间的小时（不能晚于结束时间的小时）
+const getDisabledStartHours = () => {
+  if (!data.form.endTimeOnly) return []
+  const endHour = parseInt(data.form.endTimeOnly.split(':')[0])
+  const disabled = []
+  for (let i = endHour; i < 24; i++) {
+    disabled.push(i)
+  }
+  return disabled
+}
+
+// 禁用开始时间的分钟（如果小时相同，分钟不能晚于结束时间的分钟）
+const getDisabledStartMinutes = (hour) => {
+  if (!data.form.endTimeOnly) return []
+  const [endHour, endMinute] = data.form.endTimeOnly.split(':').map(Number)
+  if (hour === endHour) {
+    const disabled = []
+    for (let i = endMinute; i < 60; i++) {
+      disabled.push(i)
+    }
+    return disabled
+  }
+  return []
+}
+
+// 禁用结束时间的小时（不能早于开始时间的小时）
+const getDisabledEndHours = () => {
+  if (!data.form.startTimeOnly) return []
+  const startHour = parseInt(data.form.startTimeOnly.split(':')[0])
+  const disabled = []
+  for (let i = 0; i <= startHour; i++) {
+    disabled.push(i)
+  }
+  return disabled
+}
+
+// 禁用结束时间的分钟（如果小时相同，分钟不能早于开始时间的分钟）
+const getDisabledEndMinutes = (hour) => {
+  if (!data.form.startTimeOnly) return []
+  const [startHour, startMinute] = data.form.startTimeOnly.split(':').map(Number)
+  if (hour === startHour) {
+    const disabled = []
+    for (let i = 0; i <= startMinute; i++) {
+      disabled.push(i)
+    }
+    return disabled
+  }
+  return []
+}
+
+// ===== 长期活动时间禁用逻辑 =====
+const getDisabledDailyStartHours = () => {
+  if (!data.form.dailyEndTime) return []
+  const endHour = parseInt(data.form.dailyEndTime.split(':')[0])
+  const disabled = []
+  for (let i = endHour; i < 24; i++) {
+    disabled.push(i)
+  }
+  return disabled
+}
+
+const getDisabledDailyStartMinutes = (hour) => {
+  if (!data.form.dailyEndTime) return []
+  const [endHour, endMinute] = data.form.dailyEndTime.split(':').map(Number)
+  if (hour === endHour) {
+    const disabled = []
+    for (let i = endMinute; i < 60; i++) {
+      disabled.push(i)
+    }
+    return disabled
+  }
+  return []
+}
+
+const getDisabledDailyEndHours = () => {
+  if (!data.form.dailyStartTime) return []
+  const startHour = parseInt(data.form.dailyStartTime.split(':')[0])
+  const disabled = []
+  for (let i = 0; i <= startHour; i++) {
+    disabled.push(i)
+  }
+  return disabled
+}
+
+const getDisabledDailyEndMinutes = (hour) => {
+  if (!data.form.dailyStartTime) return []
+  const [startHour, startMinute] = data.form.dailyStartTime.split(':').map(Number)
+  if (hour === startHour) {
+    const disabled = []
+    for (let i = 0; i <= startMinute; i++) {
+      disabled.push(i)
+    }
+    return disabled
+  }
+  return []
+}
+
+// 【新增】禁用结束日期（不能早于开始日期）
+const disabledEndDate = (time) => {
+  if (!data.form.startDate) return false
+  const startDate = new Date(data.form.startDate)
+  // 禁用所有早于开始日期的日期
+  return time.getTime() < startDate.getTime()
+}
+
+// 【新增】获取状态标签类型
+const getStatusType = (status) => {
+  switch(status) {
+    case '未开始': return ''
+    case '进行中': return 'success'
+    case '已结束': return 'info'
+    default: return 'success'
+  }
+}
+
 const data = reactive({
   formVisible: false,
   form: {},
@@ -426,7 +705,18 @@ load()
 const handleAdd = () => {
   data.form = {
     activityType: '线下', // 【新增】默认线下
-    status: '未开始'
+    activityDurationType: 'short', // 【新增】默认短期活动
+    durationDays: 1, // 【新增】默认1天
+    maxParticipants: 0, // 【新增】默认不限制
+    // 短期活动字段
+    activityDate: '',
+    startTimeOnly: '14:00:00',
+    endTimeOnly: '16:00:00',
+    // 长期活动字段
+    startDate: '',
+    endDate: '',
+    dailyStartTime: '09:00:00',
+    dailyEndTime: '17:00:00'
   }
   data.form.content = '' // 修改：初始化空内容
   data.form.participationMethod = '' // 【新增】初始化参与方式
@@ -439,8 +729,37 @@ const handleEdit = (row) => {
   if (!data.form.activityType) {
     data.form.activityType = '线下' // 【新增】兼容旧数据
   }
+  if (!data.form.activityDurationType) {
+    data.form.activityDurationType = 'short' // 【新增】兼容旧数据
+  }
+  if (!data.form.durationDays) {
+    data.form.durationDays = 1 // 【新增】兼容旧数据
+  }
   if (!data.form.participationMethod) {
     data.form.participationMethod = '' // 【新增】兼容旧数据
+  }
+  
+  // 【新增】短期活动字段初始化
+  if (data.form.activityDurationType === 'short' && data.form.startTime) {
+    data.form.activityDate = data.form.startTime.substring(0, 10)
+    data.form.startTimeOnly = data.form.startTime.substring(11, 19)
+    data.form.endTimeOnly = data.form.endTime ? data.form.endTime.substring(11, 19) : ''
+  }
+  
+  // 【新增】长期活动字段初始化
+  if (data.form.activityDurationType === 'long') {
+    if (!data.form.startDate && data.form.startTime) {
+      data.form.startDate = data.form.startTime.substring(0, 10)
+    }
+    if (!data.form.endDate && data.form.endTime) {
+      data.form.endDate = data.form.endTime.substring(0, 10)
+    }
+    if (!data.form.dailyStartTime) {
+      data.form.dailyStartTime = data.form.startTime ? data.form.startTime.substring(11, 19) : '09:00:00'
+    }
+    if (!data.form.dailyEndTime) {
+      data.form.dailyEndTime = data.form.endTime ? data.form.endTime.substring(11, 19) : '17:00:00'
+    }
   }
   data.formVisible = true
 }
@@ -463,7 +782,89 @@ const save = () => {
         }
       }
       
-      // 【修改】编辑时使用PUT请求，新增使用POST
+      // 【新增】验证时间合理性
+      if (!validateTimeRange()) {
+        return
+      }
+      
+      // 【新增】短期活动：合并日期和时间段为startTime和endTime
+      if (data.form.activityDurationType === 'short') {
+        if (!data.form.activityDate) {
+          ElMessage.error('请选择活动日期')
+          return
+        }
+        if (!data.form.startTimeOnly || !data.form.endTimeOnly) {
+          ElMessage.error('请设置活动时间段')
+          return
+        }
+        
+        // 构造startTime和endTime
+        const submitData = { ...data.form }
+        submitData.startTime = `${submitData.activityDate} ${submitData.startTimeOnly}`
+        submitData.endTime = `${submitData.activityDate} ${submitData.endTimeOnly}`
+        
+        // 删除临时字段
+        delete submitData.activityDate
+        delete submitData.startTimeOnly
+        delete submitData.endTimeOnly
+        
+        // 提交
+        const url = submitData.id ? '/activity/update' : '/activity/add'
+        const api = submitData.id ? request.put : request.post
+        api(url, submitData).then(res => {
+          if (res.code === '200') {
+            ElMessage.success('操作成功')
+            data.formVisible = false
+            data.form.content = ''
+            data.form.participationMethod = ''
+            load()
+          } else {
+            ElMessage.error(res.msg)
+          }
+        })
+        return
+      }
+      
+      // 【新增】长期活动：合并日期和时间段为startTime和endTime
+      if (data.form.activityDurationType === 'long') {
+        if (!data.form.startDate || !data.form.endDate) {
+          ElMessage.error('请选择活动开始和结束日期')
+          return
+        }
+        if (!data.form.dailyStartTime || !data.form.dailyEndTime) {
+          ElMessage.error('请设置每天的活动时间段')
+          return
+        }
+        
+        // 构造startTime和endTime（后端需要）
+        const submitData = { ...data.form }
+        submitData.startTime = `${submitData.startDate} ${submitData.dailyStartTime}`
+        submitData.endTime = `${submitData.endDate} ${submitData.dailyEndTime}`
+        
+        // 删除临时字段
+        delete submitData.startDate
+        delete submitData.endDate
+        delete submitData.dailyStartTime
+        delete submitData.dailyEndTime
+        
+        // 提交
+        const url = submitData.id ? '/activity/update' : '/activity/add'
+        const api = submitData.id ? request.put : request.post
+        api(url, submitData).then(res => {
+          if (res.code === '200') {
+            ElMessage.success('操作成功')
+            data.formVisible = false
+            data.form.content = ''
+            data.form.participationMethod = ''
+            load()
+          } else {
+            ElMessage.error(res.msg)
+          }
+        })
+        return
+      }
+      
+      // 兼容旧数据：直接提交
       const url = data.form.id ? '/activity/update' : '/activity/add'
       const api = data.form.id ? request.put : request.post
       api(url, data.form).then(res => {

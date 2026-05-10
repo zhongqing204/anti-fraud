@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -24,8 +25,13 @@ public class ActivitySignup {
     private String remark;
     private String status;
     private String reason;
+    private String cancelReason; // 取消原因
+    private String cancelStatus; // 取消状态：待审批、已同意、已拒绝
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime cancelTime; // 申请取消时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime signupTime;
     private String userName;
     private String activityName;
+    private LocalDate scheduleDate; // 报名的日期（仅长期活动使用）
 }

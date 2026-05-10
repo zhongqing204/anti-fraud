@@ -35,10 +35,20 @@
                 <el-option label="线下" value="线下" />
               </el-select>
             </div>
+            <!-- 【新增】持续时间类型筛选 -->
+            <div class="filter-item">
+              <div class="filter-label">持续时间</div>
+              <el-select v-model="data.durationType" placeholder="请选择持续时间" clearable class="filter-select" :teleported="false">
+                <el-option label="全部" :value="undefined" />
+                <el-option label="短期活动" value="short" />
+                <el-option label="长期活动" value="long" />
+              </el-select>
+            </div>
             <div class="filter-item">
               <div class="filter-label">状态</div>
               <el-select v-model="data.status" placeholder="请选择状态" clearable class="filter-select" :teleported="false">
                 <el-option label="全部" :value="undefined" />
+                <el-option label="未开始" value="未开始" />
                 <el-option label="进行中" value="进行中" />
                 <el-option label="已结束" value="已结束" />
               </el-select>
@@ -95,6 +105,13 @@
                     </span>
                   </div>
                   <div class="meta-row tags">
+                    <!-- 【新增】活动持续时间类型标签 -->
+                    <el-tag v-if="item.activityDurationType === 'long'" type="warning" size="small">
+                      📅 长期活动（{{ item.durationDays }}天）
+                    </el-tag>
+                    <el-tag v-else type="info" size="small">
+                      ⏱️ 短期活动
+                    </el-tag>
                     <el-tag v-if="item.activityType" :type="item.activityType === '线上' ? 'success' : 'primary'" size="small">
                       {{ item.activityType }}
                     </el-tag>
@@ -104,11 +121,15 @@
                     <span v-if="item.activityType === '线上'" class="online-tag">
                       💻 线上活动
                     </span>
+                    <!-- 【新增】报名人数信息 -->
+                    <span v-if="item.maxParticipants && item.maxParticipants > 0" class="participants-tag">
+                      👥 {{ item.currentParticipants || 0 }}/{{ item.maxParticipants }}
+                    </span>
                   </div>
                 </div>
               </div>
               <div class="activity-status">
-                <el-tag :type="item.status === '已结束' ? 'info' : 'success'" size="large" class="status-tag">
+                <el-tag :type="getStatusType(item.status)" size="large" class="status-tag">
                   {{ item.status || '进行中' }}
                 </el-tag>
                 <div class="view-hint">点击查看详情</div>
@@ -157,7 +178,17 @@ const stripHtml = (html) => {
 
 // 【新增】获取进行中的活动数量
 const getOngoingCount = () => {
-  return data.activityData.filter(item => item.status !== '已结束').length
+  return data.activityData.filter(item => item.status === '进行中').length
+}
+
+// 【新增】获取状态标签类型
+const getStatusType = (status) => {
+  switch(status) {
+    case '未开始': return ''
+    case '进行中': return 'success'
+    case '已结束': return 'info'
+    default: return 'success'
+  }
 }
 
 // 【新增】获取线上活动数量
@@ -181,6 +212,8 @@ const data = reactive({
   categoryId: null,
   // 【新增】线上线下筛选字段
   activityType: null,
+  // 【新增】持续时间类型筛选
+  durationType: null,
   status: null,
   timeFilter: null,
   pageNum: 1,
@@ -208,6 +241,7 @@ loadCategory()
 const resetFilter = () => {
   data.categoryId = null
   data.activityType = null // 【新增】重置线上线下筛选
+  data.durationType = null // 【新增】重置持续时间筛选
   data.status = null
   data.timeFilter = null
   applyFilter()
@@ -223,7 +257,7 @@ const applyFilter = () => {
 
 // 更新筛选状态
 const updateFilterStatus = () => {
-  data.hasFilter = !!(data.categoryId || data.activityType || data.status || data.timeFilter)
+  data.hasFilter = !!(data.categoryId || data.activityType || data.durationType || data.status || data.timeFilter)
 }
 
 // 加载活动列表
@@ -236,6 +270,8 @@ const load = () => {
       categoryId: data.categoryId,
       // 【新增】线上线下筛选参数
       activityType: data.activityType,
+      // 【新增】持续时间类型筛选参数
+      activityDurationType: data.durationType,
       status: data.status
     }
   }).then(res => {
@@ -243,8 +279,29 @@ const load = () => {
     if (res.code === '200') {
       console.log('Records:', res.data?.records)
       console.log('Total:', res.data?.total)
-      data.activityData = res.data?.records || []
-      data.total = res.data?.total || 0
+      let records = res.data?.records || []
+      
+      // 【新增】前端时间筛选
+      if (data.timeFilter) {
+        const now = new Date()
+        records = records.filter(item => {
+          if (!item.startTime) return false
+          const startTime = new Date(item.startTime)
+          const diffDays = (now - startTime) / (1000 * 60 * 60 * 24)
+          
+          if (data.timeFilter === 'week') {
+            return diffDays <= 7
+          } else if (data.timeFilter === 'month') {
+            return diffDays <= 30
+          } else if (data.timeFilter === 'threeMonths') {
+            return diffDays <= 90
+          }
+          return true
+        })
+      }
+      
+      data.activityData = records
+      data.total = records.length
       console.log('data.total set to:', data.total)
     } else {
       ElMessage.error(res.msg)

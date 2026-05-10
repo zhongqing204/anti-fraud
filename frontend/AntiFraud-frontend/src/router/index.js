@@ -39,6 +39,7 @@ const router = createRouter({
         { path: 'person', meta: { name: '个人资料' }, component: () => import('../views/admin/Person.vue') },
         { path: 'password', meta: { name: '修改密码' }, component: () => import('../views/admin/Password.vue') },
         { path: 'user', meta: { name: '用户信息' }, component: () => import('../views/admin/User.vue') },
+        { path: 'chat', meta: { name: '在线咨询管理' }, component: () => import('../views/admin/Chat.vue') },
       ]
     },
     {
@@ -66,6 +67,7 @@ const router = createRouter({
         { path: 'myReport', meta: { name: '我的举报' }, component: () => import('../views/user/MyReport.vue') },
         { path: 'myMessage', meta: { name: '我的消息' }, component: () => import('../views/user/MyMessage.vue') },
         { path: 'myArticleReport', meta: { name: '我的帖子举报' }, component: () => import('../views/user/MyArticleReport.vue') },
+        { path: 'chat', meta: { name: '在线咨询' }, component: () => import('../views/user/Chat.vue') },
       ]
     },
     { path: '/login', meta: { name: '登录' }, component: () => import('../views/Login.vue') },
